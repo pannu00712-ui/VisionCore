@@ -44,19 +44,34 @@
   </ItemGroup>
 
   <!-- ── Theme / asset files ────────────────────────────────────────────── -->
+  <!--
+       Microsoft.NET.Sdk (with UseWPF=true) already picks up every loose
+       .xaml file under the project folder as an implicit Page item
+       (default EnableDefaultPageItems = true). Declaring
+       <Resource Include="Themes\...xaml"> here duplicates those same
+       items and triggers NETSDK1022, exactly like the appsettings.json
+       case in VisionCore.Service.csproj. Use <Page Update> instead —
+       it only overrides metadata (e.g. forcing the build action) on the
+       item the SDK already discovered, without adding a second item.
+  -->
   <ItemGroup>
-    <!-- Themes — compiled as resources, loaded via pack:// URI in App.xaml -->
-    <Resource Include="Themes\DarkTheme.xaml"/>
-    <Resource Include="Themes\LightTheme.xaml"/>
-    <!-- Tray icon -->
+    <Page Update="Themes\DarkTheme.xaml" Generator="MSBuild:Compile"/>
+    <Page Update="Themes\LightTheme.xaml" Generator="MSBuild:Compile"/>
+  </ItemGroup>
+
+  <!-- ── Tray icon ─────────────────────────────────────────────────────── -->
+  <ItemGroup>
     <Content Include="Assets\tray.ico" CopyToOutputDirectory="PreserveNewest"/>
   </ItemGroup>
 
   <!-- ── appsettings (optional WPF overrides) ──────────────────────────── -->
+  <!--
+       Same NETSDK1022 cause as above: the SDK already includes
+       appsettings*.json as an implicit Content item. Use <Content Update>
+       to set CopyToOutputDirectory without re-declaring the item.
+  -->
   <ItemGroup>
-    <Content Include="appsettings.json"
-             CopyToOutputDirectory="PreserveNewest"
-             Condition="Exists('appsettings.json')"/>
+    <Content Update="appsettings.json" CopyToOutputDirectory="PreserveNewest"/>
   </ItemGroup>
 
 </Project>
