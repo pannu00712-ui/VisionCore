@@ -43,10 +43,8 @@
 
   <!-- ── Embed appsettings ─────────────────────────────────────────────────── -->
   <ItemGroup>
-    <Content Include="appsettings.json"     CopyToOutputDirectory="PreserveNewest"/>
-    <Content Include="appsettings.*.json"
-             CopyToOutputDirectory="PreserveNewest"
-             Condition="Exists('%(FullPath)')"/>
+    <Content Include="appsettings.json" CopyToOutputDirectory="PreserveNewest"/>
+    <Content Include="appsettings.*.json" CopyToOutputDirectory="PreserveNewest" Exclude="appsettings.json"/>
   </ItemGroup>
 
 </Project>
