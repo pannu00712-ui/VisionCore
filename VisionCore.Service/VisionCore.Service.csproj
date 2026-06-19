@@ -42,11 +42,16 @@
   </ItemGroup>
 
   <!-- ── Embed appsettings ─────────────────────────────────────────────────── -->
+  <!--
+       Microsoft.NET.Sdk.Worker already includes appsettings*.json as
+       implicit Content items (CopyToOutputDirectory = PreserveNewest by
+       default). Using <Content Include> here duplicates that and causes
+       NETSDK1022. Use <Content Update> to just confirm/override the
+       copy behaviour on the items the SDK already picked up.
+  -->
   <ItemGroup>
-    <Content Include="appsettings.json"     CopyToOutputDirectory="PreserveNewest"/>
-    <Content Include="appsettings.*.json"
-             CopyToOutputDirectory="PreserveNewest"
-             Condition="Exists('%(FullPath)')"/>
+    <Content Update="appsettings.json" CopyToOutputDirectory="PreserveNewest"/>
+    <Content Update="appsettings.*.json" CopyToOutputDirectory="PreserveNewest"/>
   </ItemGroup>
 
 </Project>
