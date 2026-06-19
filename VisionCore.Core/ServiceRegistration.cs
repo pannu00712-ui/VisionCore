@@ -52,6 +52,9 @@ namespace VisionCore.Core
             // ── First-run / auto-update utilities ─────────────────────────
             services.AddSingleton<MediaMtxDownloader>();
 
+            // ── UPnP port mapping ───────────────────────────────────────────
+            services.AddSingleton<UpnpPortMappingService>();
+
             return services;
         }
     }

@@ -107,7 +107,7 @@ namespace VisionCore.WPF.ViewModels
         private int          _rtspPort       = 8554;
         private ScreenRegion? _region;
 
-        public CameraSource Source         { get => _source;        set { Set(ref _source,        value); OnPropertyChanged(nameof(IsWebcamVisible)); OnPropertyChanged(nameof(IsRegionVisible)); OnPropertyChanged(nameof(IsAppWindowVisible)); OnPropertyChanged(nameof(IsExternalSourceVisible)); } }
+        public CameraSource Source         { get => _source;        set { Set(ref _source,        value); OnPropertyChanged(nameof(IsWebcamVisible)); OnPropertyChanged(nameof(IsRegionVisible)); OnPropertyChanged(nameof(IsAppWindowVisible)); OnPropertyChanged(nameof(IsExternalSourceVisible)); OnPropertyChanged(nameof(IsStaticImageVisible)); OnPropertyChanged(nameof(IsAudioOnlyVisible)); ValidateAll(); } }
         public string       WebcamDeviceId { get => _webcamDeviceId; set => Set(ref _webcamDeviceId, value); }
         public string       RtspPath       { get => _rtspPath;       set { Set(ref _rtspPath, value); ValidateAll(); } }
         public int          RtspPort       { get => _rtspPort;       set => Set(ref _rtspPort, value); }
@@ -118,8 +118,40 @@ namespace VisionCore.WPF.ViewModels
         public bool IsAppWindowVisible    => Source is CameraSource.AppWindow;
         public bool IsExternalSourceVisible => Source is CameraSource.ExternalRtsp or CameraSource.ExternalHttp;
 
+        /// <summary>Shown when Source == StaticImage: image path picker + preview thumbnail.</summary>
+        public bool IsStaticImageVisible => Source is CameraSource.StaticImage;
+
+        /// <summary>
+        /// Shown when Source == AudioOnly: the audio device fields are reused from the
+        /// AUDIO section, but this flag also forces an audio source to be selected
+        /// (AudioOnly with AudioSource.None makes no sense).
+        /// </summary>
+        public bool IsAudioOnlyVisible => Source is CameraSource.AudioOnly;
+
         public string WindowTitle { get => _windowTitle; set => Set(ref _windowTitle, value); }
         public string InputUrl    { get => _inputUrl;    set => Set(ref _inputUrl,    value); }
+
+        private string _staticImagePath = string.Empty;
+        public string StaticImagePath
+        {
+            get => _staticImagePath;
+            set
+            {
+                Set(ref _staticImagePath, value);
+                UpdateImagePreview();
+                ValidateAll();
+            }
+        }
+
+        private System.Windows.Media.Imaging.BitmapImage? _imagePreview;
+        /// <summary>Thumbnail preview of <see cref="StaticImagePath"/>, shown in the edit dialog.</summary>
+        public System.Windows.Media.Imaging.BitmapImage? ImagePreview
+        {
+            get => _imagePreview;
+            private set { Set(ref _imagePreview, value); OnPropertyChanged(nameof(HasImagePreview)); }
+        }
+
+        public bool HasImagePreview => ImagePreview != null;
 
         public string RegionSummary => Region != null
             ? $"Monitor {Region.MonitorIndex}  •  {Region.X},{Region.Y}  {Region.Width}×{Region.Height}"
@@ -143,7 +175,7 @@ namespace VisionCore.WPF.ViewModels
         private string      _micDeviceId   = string.Empty;
         private int         _audioBitrate  = 128;
 
-        public AudioSource AudioSource   { get => _audioSource;  set { Set(ref _audioSource,  value); OnPropertyChanged(nameof(IsAudioConfigVisible)); } }
+        public AudioSource AudioSource   { get => _audioSource;  set { Set(ref _audioSource,  value); OnPropertyChanged(nameof(IsAudioConfigVisible)); ValidateAll(); } }
         public string      MicDeviceId   { get => _micDeviceId;  set => Set(ref _micDeviceId,  value); }
         public int         AudioBitrate  { get => _audioBitrate; set => Set(ref _audioBitrate, value); }
         public bool        IsAudioConfigVisible => AudioSource != AudioSource.None;
@@ -205,6 +237,7 @@ namespace VisionCore.WPF.ViewModels
         public ICommand RemoveOverlayCommand { get; }
         public ICommand AutoFillPathCommand  { get; }
         public ICommand PickScreenCommand    { get; }
+        public ICommand BrowseImageCommand   { get; }
 
         /// <summary>Raised when the dialog should close (Save or Cancel).</summary>
         public event EventHandler<bool>? RequestClose;
@@ -239,6 +272,9 @@ namespace VisionCore.WPF.ViewModels
                 p => p is OverlayRowViewModel);
             AutoFillPathCommand  = new RelayCommand(_ => AutoFillPath());
             PickScreenCommand    = new RelayCommand(_ => PickScreen());
+            BrowseImageCommand   = new RelayCommand(_ => BrowseImage());
+
+            UpdateImagePreview();
 
             ValidateAll();
         }
@@ -322,6 +358,7 @@ namespace VisionCore.WPF.ViewModels
             Source          = c.Source;
             WebcamDeviceId  = c.WebcamDeviceId ?? string.Empty;
             WindowTitle     = c.WindowTitle ?? string.Empty;
+            StaticImagePath = c.StaticImagePath ?? string.Empty;
             InputUrl        = c.InputUrl ?? string.Empty;
             RtspPath        = c.RtspPath;
             RtspPort        = c.RtspPort;
@@ -352,6 +389,7 @@ namespace VisionCore.WPF.ViewModels
             Source          = Source,
             WebcamDeviceId  = string.IsNullOrEmpty(WebcamDeviceId) ? null : WebcamDeviceId,
             WindowTitle     = string.IsNullOrEmpty(WindowTitle) ? null : WindowTitle,
+            StaticImagePath = string.IsNullOrEmpty(StaticImagePath) ? null : StaticImagePath,
             InputUrl        = string.IsNullOrEmpty(InputUrl) ? null : InputUrl,
             RtspPath        = RtspPath.Trim().TrimStart('/'),
             RtspPort        = RtspPort,
@@ -383,6 +421,53 @@ namespace VisionCore.WPF.ViewModels
                     .Replace("_", "-");
             else
                 RtspPath = $"cam-{_id.ToString("N")[..8]}";
+        }
+
+        private void BrowseImage()
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Title  = "Select static image for stream",
+                Filter = "Image files (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp|All files (*.*)|*.*",
+                CheckFileExists = true,
+            };
+
+            if (string.IsNullOrEmpty(dlg.FileName) && !string.IsNullOrEmpty(StaticImagePath) &&
+                System.IO.File.Exists(StaticImagePath))
+            {
+                dlg.InitialDirectory = System.IO.Path.GetDirectoryName(StaticImagePath);
+            }
+
+            if (dlg.ShowDialog() == true)
+                StaticImagePath = dlg.FileName;
+        }
+
+        /// <summary>(Re)loads <see cref="ImagePreview"/> from <see cref="StaticImagePath"/>, if it exists.</summary>
+        private void UpdateImagePreview()
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(StaticImagePath) || !System.IO.File.Exists(StaticImagePath))
+                {
+                    ImagePreview = null;
+                    return;
+                }
+
+                var bmp = new System.Windows.Media.Imaging.BitmapImage();
+                bmp.BeginInit();
+                bmp.CacheOption   = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                bmp.DecodePixelWidth = 240; // thumbnail size — keep dialog lightweight
+                bmp.UriSource     = new Uri(StaticImagePath, UriKind.Absolute);
+                bmp.EndInit();
+                bmp.Freeze();
+
+                ImagePreview = bmp;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load static image preview from '{Path}'.", StaticImagePath);
+                ImagePreview = null;
+            }
         }
 
         private void PickScreen()
@@ -424,9 +509,20 @@ namespace VisionCore.WPF.ViewModels
             if (OnvifPort is < 1024 or > 65535)
                 _errors[nameof(OnvifPort)] = "ONVIF port must be in range 1024–65535.";
 
+            if (Source == CameraSource.StaticImage)
+            {
+                if (string.IsNullOrWhiteSpace(StaticImagePath))
+                    _errors[nameof(StaticImagePath)] = "An image file must be selected for a static image source.";
+                else if (!System.IO.File.Exists(StaticImagePath))
+                    _errors[nameof(StaticImagePath)] = "The selected image file does not exist.";
+            }
+
+            if (Source == CameraSource.AudioOnly && AudioSource == AudioSource.None)
+                _errors[nameof(AudioSource)] = "Select a microphone or desktop audio source for an audio-only stream.";
+
             OnPropertyChanged(nameof(IsValid));
             OnPropertyChanged(nameof(Error));
-            ((AsyncRelayCommand)SaveCommand).RaiseCanExecuteChanged();
+            ((AsyncRelayCommand?)SaveCommand)?.RaiseCanExecuteChanged();
         }
     }
 }

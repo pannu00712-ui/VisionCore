@@ -59,8 +59,15 @@
                             Style="{StaticResource Btn.Ghost}"
                             Command="{Binding DeleteCameraCommand}"
                             MinWidth="76"
-                            Margin="0,0,16,0"
+                            Margin="0,0,8,0"
                             ToolTip="Delete selected camera"/>
+
+                    <Button Content="🖥  Add all monitors"
+                            Style="{StaticResource Btn.Ghost}"
+                            Command="{Binding AddAllMonitorsCommand}"
+                            MinWidth="140"
+                            Margin="0,0,16,0"
+                            ToolTip="Add one full-screen camera for each connected monitor that doesn't have one yet"/>
 
                     <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"
                                Margin="0,0,16,0"

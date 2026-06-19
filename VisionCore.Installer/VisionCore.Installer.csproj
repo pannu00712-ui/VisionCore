@@ -27,22 +27,10 @@
     <ProductName>VisionCore</ProductName>
     <ProductVersion>1.0.0</ProductVersion>
     <Manufacturer>VisionCore</Manufacturer>
-    <OutputName Condition="'$(OutputName)'==''">VisionCore-$(ProductVersion)-Setup-x64</OutputName>
+    <OutputName>VisionCore-$(ProductVersion)-Setup</OutputName>
     <!-- Source directory where dotnet publish output is placed -->
-    <SourceDir Condition="'$(SourceDir)'==''">$(MSBuildThisFileDirectory)..\publish\x64</SourceDir>
-    <!-- Platform: x64 (default) or x86 -->
-    <InstallerPlatform Condition="'$(InstallerPlatform)'==''">x64</InstallerPlatform>
+    <SourceDir Condition="'$(SourceDir)'==''">$(MSBuildThisFileDirectory)..\publish</SourceDir>
     <Nullable>enable</Nullable>
-  </PropertyGroup>
-
-  <!-- Platform-specific MSI settings -->
-  <PropertyGroup Condition="'$(InstallerPlatform)'=='x64'">
-    <WixInstallerPlatform>x64</WixInstallerPlatform>
-    <WixArchitecture>x64</WixArchitecture>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(InstallerPlatform)'=='x86'">
-    <WixInstallerPlatform>x86</WixInstallerPlatform>
-    <WixArchitecture>x86</WixArchitecture>
   </PropertyGroup>
 
   <!-- ── WiX extensions ─────────────────────────────────────────────────── -->

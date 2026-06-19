@@ -73,6 +73,40 @@ namespace VisionCore.Core.Models
         /// </summary>
         public bool StealthMode { get; set; } = false;
 
+        /// <summary>
+        /// Optional password that must be entered before the main UI or Settings can be opened.
+        /// Mirrors DeskCamera's "Silent Mode — protected by password" feature.
+        /// Null or empty means no UI password is enforced.
+        /// Stored as a BCrypt hash; the raw password is never persisted.
+        /// </summary>
+        public string? UiPasswordHash { get; set; }
+
+        // ── RDP Support ───────────────────────────────────────────────────────
+
+        /// <summary>
+        /// When true, the streaming engine continues running after a Remote Desktop
+        /// (RDP/RDS) session disconnects from the console session.
+        /// Mirrors DeskCamera's "RDP Support" feature.
+        /// Implemented by keeping a virtual desktop session alive via the
+        /// <c>WTSVirtualChannel</c> / session-switching Windows APIs so that
+        /// screen-capture sources remain valid even with no interactive user logged in.
+        /// Default true — matches DeskCamera behaviour.
+        /// </summary>
+        public bool ContinueStreamingOnRdpDisconnect { get; set; } = true;
+
+        // ── Idle Prevention ───────────────────────────────────────────────────
+
+        /// <summary>
+        /// Prevents the PC from entering an idle/sleep state while at least one
+        /// camera is actively streaming.
+        /// Mirrors DeskCamera's "Idle Prevention" feature.
+        /// Implemented by calling <c>SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED)</c>
+        /// on the service thread while cameras are running, and clearing the flag when all
+        /// cameras stop.
+        /// Default true — a PC that stops streaming because it slept is rarely desirable.
+        /// </summary>
+        public bool PreventIdleSleep { get; set; } = true;
+
         // ── ONVIF mode ────────────────────────────────────────────────────────
 
         /// <summary>
@@ -117,6 +151,18 @@ namespace VisionCore.Core.Models
 
         /// <summary>Port MediaMTX listens on for RTSP connections (default 8554).</summary>
         public int RtspPort { get; set; } = 8554;
+
+        // ── UPnP ──────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// When true, VisionCore attempts to open port mappings on the user's
+        /// router via UPnP IGD on service start (RTSP, REST API, and the
+        /// configured ONVIF port range), and removes them again on service stop.
+        /// Default false — exposing ports to the internet is opt-in and the
+        /// resulting status (success / failed / disabled) is always shown in
+        /// Settings so the user knows what is exposed.
+        /// </summary>
+        public bool EnableUpnp { get; set; } = false;
 
         // ── Logging ───────────────────────────────────────────────────────────
 

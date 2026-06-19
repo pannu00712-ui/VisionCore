@@ -29,8 +29,7 @@
        ══════════════════════════════════════════════════════════════════════ -->
 
   <Fragment>
-    <!-- x64: C:\Program Files\VisionCore  |  x86: C:\Program Files (x86)\VisionCore -->
-    <StandardDirectory Id="ProgramFiles64Folder" Condition="$(var.InstallerPlatform)=x64">
+    <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="INSTALLDIR" Name="VisionCore">
 
         <!-- WPF tray application -->
@@ -51,17 +50,6 @@
         <!-- Shared data / config (writable by service account) -->
         <Directory Id="INSTALLDIR_DATA" Name="data" />
 
-      </Directory>
-    </StandardDirectory>
-
-    <StandardDirectory Id="ProgramFilesFolder" Condition="$(var.InstallerPlatform)=x86">
-      <Directory Id="INSTALLDIR" Name="VisionCore">
-        <Directory Id="INSTALLDIR_APP"     Name="app" />
-        <Directory Id="INSTALLDIR_SERVICE" Name="service">
-          <Directory Id="INSTALLDIR_MEDIAMTX" Name="mediamtx" />
-          <Directory Id="INSTALLDIR_FFMPEG"   Name="ffmpeg" />
-        </Directory>
-        <Directory Id="INSTALLDIR_DATA" Name="data" />
       </Directory>
     </StandardDirectory>
 

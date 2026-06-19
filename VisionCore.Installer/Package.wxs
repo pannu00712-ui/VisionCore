@@ -66,18 +66,12 @@
       Condition="DOTNET8_DESKTOP_INSTALLED"
       Message="VisionCore requires .NET 8 Windows Desktop Runtime.  Please install it from https://dotnet.microsoft.com/download/dotnet/8.0 and run Setup again." />
 
-    <!-- ── Property: detect .NET 8 Desktop Runtime (x64 or x86) ─────────── -->
+    <!-- ── Property: detect .NET 8 Desktop Runtime ───────────────────────── -->
     <Property Id="DOTNET8_DESKTOP_INSTALLED">
       <RegistrySearch
-        Id="SearchDotNet8Desktop64"
+        Id="SearchDotNet8Desktop"
         Root="HKLM"
         Key="SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App"
-        Name="8.0.0"
-        Type="raw" />
-      <RegistrySearch
-        Id="SearchDotNet8Desktop86"
-        Root="HKLM"
-        Key="SOFTWARE\dotnet\Setup\InstalledVersions\x86\sharedfx\Microsoft.WindowsDesktop.App"
         Name="8.0.0"
         Type="raw" />
     </Property>

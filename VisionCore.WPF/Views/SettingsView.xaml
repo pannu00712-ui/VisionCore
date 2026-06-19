@@ -100,6 +100,44 @@
                     </Border>
 
 
+                    <!-- ── UPnP Port Mapping ───────────────────────────────── -->
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+                        <StackPanel>
+                            <TextBlock Text="UPNP PORT MAPPING"
+                                       Style="{StaticResource Text.SectionHeader}"/>
+
+                            <CheckBox Content="Automatically open router ports via UPnP (RTSP, REST API, ONVIF)"
+                                      IsChecked="{Binding EnableUpnp}"
+                                      Margin="0,0,0,8"/>
+
+                            <TextBlock TextWrapping="Wrap"
+                                       Style="{StaticResource Text.Secondary}"
+                                       Margin="0,0,0,10">
+                                <Run>When enabled, VisionCore asks your router to forward RTSP (8554), the REST API port, and the ONVIF port range to this PC, making your camera streams reachable from outside your local network.</Run>
+                                <Run FontWeight="SemiBold"> This exposes those services to the internet — only enable it if you intend to access streams remotely and understand the risk.</Run>
+                                <Run> Mappings are created on service start and removed on stop.</Run>
+                            </TextBlock>
+
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding UpnpStatusText}"
+                                           Style="{StaticResource Text.Secondary}"
+                                           TextWrapping="Wrap"
+                                           VerticalAlignment="Center"
+                                           Visibility="{Binding HasUpnpStatusText, Converter={StaticResource BoolToVis}}"/>
+                                <Button Grid.Column="1"
+                                        Content="Refresh status"
+                                        Style="{StaticResource Btn.Ghost}"
+                                        Command="{Binding RefreshUpnpStatusCommand}"
+                                        Margin="8,0,0,0"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
                     <!-- ── ONVIF Mode ──────────────────────────────────────── -->
                     <Border Style="{StaticResource Card}" Margin="0,0,0,20">
                         <StackPanel>

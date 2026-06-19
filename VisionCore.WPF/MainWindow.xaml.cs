@@ -12,17 +12,20 @@ namespace VisionCore.WPF
         private readonly DashboardViewModel _dashboardVm;
         private readonly LogsViewModel      _logsVm;
         private readonly SettingsViewModel  _settingsVm;
+        private readonly AuditLogViewModel  _auditLogVm;
 
         public MainWindow(
             DashboardViewModel dashboardVm,
             LogsViewModel      logsVm,
-            SettingsViewModel  settingsVm)
+            SettingsViewModel  settingsVm,
+            AuditLogViewModel  auditLogVm)
         {
             InitializeComponent();
 
             _dashboardVm = dashboardVm;
             _logsVm      = logsVm;
             _settingsVm  = settingsVm;
+            _auditLogVm  = auditLogVm;
 
             // MainWindow DataContext → DashboardViewModel so the status-bar
             // aggregates (ActiveCameras, AppUptime, etc.) bind directly.
@@ -32,6 +35,7 @@ namespace VisionCore.WPF
             PageDashboard.DataContext = _dashboardVm;
             PageLogs.DataContext      = _logsVm;
             PageSettings.DataContext  = _settingsVm;
+            PageAuditLog.DataContext  = _auditLogVm;
 
             // Wire log auto-scroll: LogsViewModel raises ScrollRequested, the
             // View's ListView is owned by LogsView code-behind — so we forward
@@ -54,6 +58,7 @@ namespace VisionCore.WPF
             await _dashboardVm.InitialiseAsync();
             await _logsVm.InitialiseAsync();
             await _settingsVm.InitialiseAsync();
+            await _auditLogVm.InitialiseAsync();
         }
 
         // ── Nav switching ─────────────────────────────────────────────────────
@@ -67,17 +72,22 @@ namespace VisionCore.WPF
         private void NavSettings_Click(object sender, RoutedEventArgs e) =>
             ShowPage(PageSettings, NavSettings);
 
+        private void NavAuditLog_Click(object sender, RoutedEventArgs e) =>
+            ShowPage(PageAuditLog, NavAuditLog);
+
         private void ShowPage(FrameworkElement page, Button activeNav)
         {
             // Hide all pages
             PageDashboard.Visibility = Visibility.Collapsed;
             PageLogs.Visibility      = Visibility.Collapsed;
             PageSettings.Visibility  = Visibility.Collapsed;
+            PageAuditLog.Visibility  = Visibility.Collapsed;
 
             // Reset all nav buttons to inactive style
             NavDashboard.Style = (Style)FindResource("NavItem");
             NavLogs.Style      = (Style)FindResource("NavItem");
             NavSettings.Style  = (Style)FindResource("NavItem");
+            NavAuditLog.Style  = (Style)FindResource("NavItem");
 
             // Show requested page and highlight nav item
             page.Visibility  = Visibility.Visible;

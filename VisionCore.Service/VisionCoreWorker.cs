@@ -38,6 +38,7 @@ internal sealed class VisionCoreWorker : BackgroundService
     private readonly RestApiService                   _api;
     private readonly CameraManager                    _cameras;
     private readonly OnvifServer                      _onvif;
+    private readonly UpnpPortMappingService           _upnp;
 
     public VisionCoreWorker(
         ILogger<VisionCoreWorker> logger,
@@ -48,7 +49,8 @@ internal sealed class VisionCoreWorker : BackgroundService
         RtspHealthMonitor         healthMonitor,
         RestApiService            api,
         CameraManager             cameras,
-        OnvifServer               onvif)
+        OnvifServer               onvif,
+        UpnpPortMappingService    upnp)
     {
         _logger        = logger;
         _config        = config;
@@ -59,6 +61,7 @@ internal sealed class VisionCoreWorker : BackgroundService
         _api           = api;
         _cameras       = cameras;
         _onvif         = onvif;
+        _upnp          = upnp;
     }
 
     // ── IHostedService.StartAsync → called by the host, not directly ─────
@@ -125,6 +128,10 @@ internal sealed class VisionCoreWorker : BackgroundService
         _logger.LogInformation("Starting REST API…");
         await _api.StartAsync(ct);
 
+        // 4b. UPnP port mapping (opt-in; no-op + status if disabled or router unreachable)
+        _logger.LogInformation("Checking UPnP port mapping…");
+        await _upnp.StartAsync();
+
         // 5. Auto-start cameras
         if (_config.GetValue<bool>("VisionCore:AutoStartCameras", true))
         {
@@ -146,6 +153,7 @@ internal sealed class VisionCoreWorker : BackgroundService
         // Reverse of start order.  Each step is individually guarded so a
         // failure in one step does not prevent the others from running.
 
+        await TryAsync("remove UPnP port mappings", () => _upnp.StopAsync());
         await TryAsync("stop health monitor",    () => { _healthMonitor.StopAsync(); return Task.CompletedTask; });
         await TryAsync("stop all cameras",       () => _cameras.StopAllAsync());
         await TryAsync("stop ONVIF server",        () => _onvif.StopAsync());

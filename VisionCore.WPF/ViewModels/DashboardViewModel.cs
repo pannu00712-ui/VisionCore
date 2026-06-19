@@ -157,6 +157,7 @@ namespace VisionCore.WPF.ViewModels
         public ICommand AddCameraCommand   { get; }
         public ICommand EditCameraCommand  { get; }
         public ICommand DeleteCameraCommand { get; }
+        public ICommand AddAllMonitorsCommand { get; }
 
         private static readonly DateTime _launchTime = DateTime.UtcNow;
 
@@ -204,6 +205,7 @@ namespace VisionCore.WPF.ViewModels
             DeleteCameraCommand = new AsyncRelayCommand(
                 async _ => await DeleteCameraAsync(),
                 _ => Selected != null && !Selected.IsRunning);
+            AddAllMonitorsCommand = new AsyncRelayCommand(async _ => await AddAllMonitorsAsync());
 
             // ── Event subscriptions ────────────────────────────────────────
             _health.HealthChanged  += OnHealthChanged;
@@ -289,6 +291,7 @@ namespace VisionCore.WPF.ViewModels
                 Selected.RtspUrl   = RtspStreamManager.GetClientUrl(cam);
                 StatusMessage      = $"'{cam.Name}' started.";
                 _logger.LogInformation("Dashboard: started camera '{Name}'.", cam.Name);
+                await _settings.WriteAuditLogAsync("CameraStarted", cam.Name);
             }
             catch (Exception ex)
             {
@@ -309,6 +312,8 @@ namespace VisionCore.WPF.ViewModels
                 await _cameras.StopCameraAsync(Selected.Id);
                 Selected.IsRunning = false;
                 StatusMessage      = $"'{Selected.Name}' stopped.";
+                _logger.LogInformation("Dashboard: stopped camera '{Name}'.", Selected.Name);
+                await _settings.WriteAuditLogAsync("CameraStopped", Selected.Name);
             }
             catch (Exception ex)
             {
@@ -414,6 +419,73 @@ namespace VisionCore.WPF.ViewModels
 
             StatusMessage = $"Camera '{newCam.Name}' added.";
             _logger.LogInformation("Dashboard: camera '{Name}' added.", newCam.Name);
+            await _settings.WriteAuditLogAsync("CameraAdded", newCam.Name,
+                $"Source={newCam.Source}, Resolution={newCam.Resolution}");
+        }
+
+        /// <summary>
+        /// Adds one full-screen "Screen" camera per connected monitor that
+        /// doesn't already have a camera pointing at it — a quick bulk setup
+        /// for multi-monitor PCs (e.g. dual-screen office workstations).
+        ///
+        /// Each new camera gets a unique RTSP path and ONVIF port, derived
+        /// from the highest port currently in use. Cameras are added disabled
+        /// (not auto-started) so the user can review/rename them first.
+        /// </summary>
+        private async Task AddAllMonitorsAsync()
+        {
+            var monitors = ScreenCaptureService.GetMonitors();
+            if (monitors.Count <= 1)
+            {
+                StatusMessage = "Only one monitor detected — nothing to add.";
+                return;
+            }
+
+            // Monitors already covered by an existing full-screen camera
+            var coveredMonitors = _settings.Cameras
+                .Where(c => c.Source == CameraSource.Screen && c.Region != null)
+                .Select(c => c.Region!.MonitorIndex)
+                .ToHashSet();
+
+            // Also treat a camera with no Region (full primary monitor) as covering monitor 0
+            if (_settings.Cameras.Any(c => c.Source == CameraSource.Screen && c.Region == null))
+                coveredMonitors.Add(0);
+
+            var nextRtspPort  = _settings.Cameras.Any() ? _settings.Cameras.Max(c => c.RtspPort)  + 1 : 8554;
+            var nextOnvifPort = _settings.Cameras.Any() ? _settings.Cameras.Max(c => c.OnvifPort) + 1 : 8080;
+
+            var added = 0;
+            foreach (var mon in monitors)
+            {
+                if (coveredMonitors.Contains(mon.Index)) continue;
+
+                var cam = new CameraConfig
+                {
+                    Name       = $"Monitor {mon.Index + 1}" + (mon.IsPrimary ? " (Primary)" : ""),
+                    Source     = CameraSource.Screen,
+                    Region     = ScreenCaptureService.FullMonitorRegion(mon.Index),
+                    RtspPath   = $"monitor-{mon.Index + 1}",
+                    RtspPort   = nextRtspPort++,
+                    OnvifPort  = nextOnvifPort++,
+                    Enabled    = false, // review before starting
+                };
+
+                await _settings.SaveCameraAsync(cam);
+                await _settings.WriteAuditLogAsync("CameraAdded", cam.Name,
+                    $"Bulk add-all-monitors (Monitor index {mon.Index})");
+                added++;
+            }
+
+            if (added == 0)
+            {
+                StatusMessage = "All monitors already have a camera configured.";
+                return;
+            }
+
+            await LoadCamerasAsync();
+            StatusMessage = $"Added {added} camera(s) for {added} monitor(s). " +
+                             "Review them in the list and click Start when ready.";
+            _logger.LogInformation("Dashboard: added {Count} camera(s) via Add-all-monitors.", added);
         }
 
         private async Task EditCameraAsync()
@@ -436,6 +508,7 @@ namespace VisionCore.WPF.ViewModels
 
             StatusMessage = $"Camera '{updated.Name}' updated.";
             _logger.LogInformation("Dashboard: camera '{Name}' updated.", updated.Name);
+            await _settings.WriteAuditLogAsync("CameraEdited", updated.Name);
         }
 
         private async Task DeleteCameraAsync()
@@ -460,6 +533,7 @@ namespace VisionCore.WPF.ViewModels
 
             StatusMessage = $"Camera '{cam.Name}' deleted.";
             _logger.LogInformation("Dashboard: camera '{Name}' deleted.", cam.Name);
+            await _settings.WriteAuditLogAsync("CameraDeleted", cam.Name);
         }
 
         private void RaiseAllCameraCommands()

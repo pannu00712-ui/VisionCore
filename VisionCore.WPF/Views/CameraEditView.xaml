@@ -182,9 +182,59 @@
                     </Grid>
                 </StackPanel>
 
-                <Separator/>
+                <!-- Static image path + thumbnail preview (shown for StaticImage) -->
+                <StackPanel Style="{StaticResource FormField}"
+                            Visibility="{Binding IsStaticImageVisible, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="Image file" Style="{StaticResource Text.Label}"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding StaticImagePath, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="Path to a JPEG or PNG file to loop as a static RTSP stream."/>
+                        <Button Grid.Column="2"
+                                Content="Browse..."
+                                Style="{StaticResource Btn.Secondary}"
+                                Command="{Binding BrowseImageCommand}"
+                                Padding="12,7"/>
+                    </Grid>
+                    <TextBlock Text="{Binding ValidationErrors[StaticImagePath]}"
+                               Style="{StaticResource Text.Error}"
+                               Margin="0,3,0,0"
+                               Visibility="{Binding ValidationErrors[StaticImagePath],
+                                            Converter={StaticResource BoolToVis}}"/>
+                    <Border Margin="0,8,0,0"
+                            Background="{StaticResource Brush.Surface}"
+                            BorderBrush="{StaticResource Brush.Border}"
+                            BorderThickness="1"
+                            CornerRadius="{StaticResource Radius.SM}"
+                            Padding="8"
+                            HorizontalAlignment="Left"
+                            Visibility="{Binding HasImagePreview, Converter={StaticResource BoolToVis}}">
+                        <Image Source="{Binding ImagePreview}"
+                               MaxHeight="135"
+                               MaxWidth="240"
+                               Stretch="Uniform"/>
+                    </Border>
+                </StackPanel>
 
-                <!-- ══ SECTION: Video ═══════════════════════════════════════ -->
+                <!-- Audio-only hint (shown for AudioOnly) -->
+                <StackPanel Style="{StaticResource FormField}"
+                            Visibility="{Binding IsAudioOnlyVisible, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="This source publishes a black 640x360 video frame with a live audio-level visualizer, driven by the microphone or desktop audio device selected below in the AUDIO section. Select an audio source there to continue."
+                               Style="{StaticResource Text.Secondary}"
+                               TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding ValidationErrors[AudioSource]}"
+                               Style="{StaticResource Text.Error}"
+                               Margin="0,6,0,0"
+                               Visibility="{Binding ValidationErrors[AudioSource],
+                                            Converter={StaticResource BoolToVis}}"/>
+                </StackPanel>
+
+                <Separator/>
                 <TextBlock Text="VIDEO" Style="{StaticResource Text.SectionHeader}"/>
 
                 <Grid Margin="0,0,0,16">

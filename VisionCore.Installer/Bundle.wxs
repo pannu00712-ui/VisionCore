@@ -78,35 +78,33 @@
     <!-- ── Package chain ─────────────────────────────────────────────────── -->
     <Chain DisableRollback="no">
 
-      <!-- 1. .NET 8 Windows Desktop Runtime — x64 -->
-      <ExePackage
-        Id="DotNet8Package_x64"
-        Name=".NET 8 Windows Desktop Runtime (x64)"
-        SourceFile="https://aka.ms/dotnet/8.0/windowsdesktop-runtime-win-x64.exe"
-        DownloadUrl="https://aka.ms/dotnet/8.0/windowsdesktop-runtime-win-x64.exe"
-        InstallCommand="/install /quiet /norestart"
-        RepairCommand="/repair /quiet /norestart"
-        UninstallCommand="/uninstall /quiet /norestart"
-        DetectCondition="DotNet8DesktopInstalled"
-        Compressed="no"
-        PerMachine="yes"
-        Vital="yes"
-        Condition="NOT DotNet8DesktopInstalled AND (VersionNT64)" />
+      <!-- 1. .NET 8 Windows Desktop Runtime -->
+      <!--
+        Downloaded on demand from Microsoft's CDN.
+        Condition: install only when DotNet8DesktopInstalled = 0 (not found).
+        Update the URL / hash when a new .NET 8 patch is released.
 
-      <!-- 1b. .NET 8 Windows Desktop Runtime — x86 -->
+        Hash: run  certutil -hashfile windowsdesktop-runtime-8.0.0-win-x64.exe SHA256
+              and paste the result (without spaces) in CertificatePublicKey.
+      -->
       <ExePackage
-        Id="DotNet8Package_x86"
-        Name=".NET 8 Windows Desktop Runtime (x86)"
-        SourceFile="https://aka.ms/dotnet/8.0/windowsdesktop-runtime-win-x86.exe"
-        DownloadUrl="https://aka.ms/dotnet/8.0/windowsdesktop-runtime-win-x86.exe"
+        Id="DotNet8Package"
+        Name=".NET 8 Windows Desktop Runtime"
+        SourceFile="https://download.visualstudio.microsoft.com/download/pr/7f1d10f4-7a3d-4f3b-9a3c-1f1d1c1e1f00/windowsdesktop-runtime-8.0.0-win-x64.exe"
+        DownloadUrl="https://download.visualstudio.microsoft.com/download/pr/7f1d10f4-7a3d-4f3b-9a3c-1f1d1c1e1f00/windowsdesktop-runtime-8.0.0-win-x64.exe"
         InstallCommand="/install /quiet /norestart"
         RepairCommand="/repair /quiet /norestart"
         UninstallCommand="/uninstall /quiet /norestart"
         DetectCondition="DotNet8DesktopInstalled"
         Compressed="no"
         PerMachine="yes"
-        Vital="yes"
-        Condition="NOT DotNet8DesktopInstalled AND NOT (VersionNT64)" />
+        Vital="yes">
+        <!--
+          Replace these placeholder hashes with the real SHA-256 and
+          certificate thumbprint from Microsoft's release page.
+        -->
+        <!-- <PayloadGroupRef Id="DotNet8Payload" /> -->
+      </ExePackage>
 
       <!-- 2. VisionCore MSI -->
       <MsiPackage

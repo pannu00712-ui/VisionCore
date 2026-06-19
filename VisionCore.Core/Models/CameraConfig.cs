@@ -117,6 +117,14 @@ namespace VisionCore.Core.Models
         /// <summary>Audio bitrate in kbps (default 128).</summary>
         public int AudioBitrate { get; set; } = 128;
 
+        /// <summary>
+        /// Audio codec used for the outgoing RTSP stream.
+        /// Defaults to <see cref="AudioCodec.AAC"/> for broad NVR compatibility.
+        /// Switch to <see cref="AudioCodec.G711ULaw"/> for ONVIF Profile S mandatory compliance
+        /// or when connecting to older NVRs that do not support AAC.
+        /// </summary>
+        public AudioCodec AudioCodec { get; set; } = AudioCodec.AAC;
+
         // ── ONVIF ─────────────────────────────────────────────────────────────
 
         /// <summary>
@@ -187,6 +195,26 @@ namespace VisionCore.Core.Models
         /// Ordered list of overlay elements burned into the video by FFmpeg drawtext/overlay filters.
         /// </summary>
         public List<OverlayConfig> Overlays { get; set; } = new();
+
+        // ── Rotation ──────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Rotation / flip applied to the video before encoding.
+        /// Mirrors DeskCamera rotation options (Auto, None, R90, L90, FlipH, FlipV, 180).
+        /// Implemented as an FFmpeg video filter inserted before the encoder.
+        /// Default is <see cref="VideoRotation.None"/> (pass-through).
+        /// </summary>
+        public VideoRotation Rotation { get; set; } = VideoRotation.None;
+
+        // ── Local recording ───────────────────────────────────────────────────
+
+        /// <summary>
+        /// Local MP4 recording configuration for this camera.
+        /// Controls whether recordings are saved to disk, output folder,
+        /// segmentation, retention policy, and motion-triggered recording.
+        /// Evaluated by <c>LocalRecordingService</c>.
+        /// </summary>
+        public RecordingConfig Recording { get; set; } = new();
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -238,6 +266,14 @@ namespace VisionCore.Core.Models
 
         /// <summary>H.265 / HEVC — higher compression, slightly less compatible.</summary>
         H265,
+
+        /// <summary>
+        /// Motion JPEG — each frame is an independent JPEG image.
+        /// Higher bandwidth than H.264/H.265 but zero inter-frame latency and
+        /// compatible with older NVRs that do not support MPEG codecs.
+        /// Software-only (no hardware acceleration path).
+        /// </summary>
+        MJPEG,
     }
 
     /// <summary>Common resolution presets. The encoder applies the closest supported mode.</summary>
@@ -289,5 +325,57 @@ namespace VisionCore.Core.Models
 
         /// <summary>Capture desktop/system audio (WASAPI loopback).</summary>
         DesktopAudio,
+    }
+
+    /// <summary>
+    /// Audio codec used for the outgoing RTSP stream.
+    /// Mirrors DeskCamera supported audio formats (G711 u-law, AAC).
+    /// </summary>
+    public enum AudioCodec
+    {
+        /// <summary>
+        /// AAC (Advanced Audio Coding) — good quality at low bitrates.
+        /// Widely supported by modern NVRs and VMSes.
+        /// FFmpeg encoder: <c>aac</c>.
+        /// </summary>
+        AAC,
+
+        /// <summary>
+        /// G.711 µ-law (PCM mu-law, 8 kHz, 64 kbps).
+        /// Mandatory codec in ONVIF Profile S; required by many older NVRs.
+        /// FFmpeg encoder: <c>pcm_mulaw</c>, muxed in RTP payload type 0.
+        /// </summary>
+        G711ULaw,
+    }
+
+    /// <summary>
+    /// Video rotation / flip applied by FFmpeg before encoding.
+    /// Mirrors DeskCamera rotation options: Auto, None, R90, L90, FlipH, FlipV, 180.
+    /// </summary>
+    public enum VideoRotation
+    {
+        /// <summary>
+        /// Automatically apply rotation metadata from the source (e.g. webcam sensor orientation).
+        /// Uses FFmpeg <c>autorotate=1</c> input option.
+        /// </summary>
+        Auto,
+
+        /// <summary>No rotation — pass frames through unmodified.</summary>
+        None,
+
+        /// <summary>Rotate 90° clockwise. FFmpeg transpose=1.</summary>
+        R90,
+
+        /// <summary>Rotate 90° counter-clockwise. FFmpeg transpose=2.</summary>
+        L90,
+
+        /// <summary>Flip horizontally (mirror left↔right). FFmpeg hflip.</summary>
+        FlipH,
+
+        /// <summary>Flip vertically (mirror top↔bottom). FFmpeg vflip.</summary>
+        FlipV,
+
+        /// <summary>Rotate 180°. FFmpeg transpose=2,transpose=2 or hflip+vflip.</summary>
+        Rotate180,
     }
 }

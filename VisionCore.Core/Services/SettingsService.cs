@@ -54,6 +54,18 @@ namespace VisionCore.Core.Services
                     id   TEXT PRIMARY KEY,
                     json TEXT NOT NULL
                 );
+
+                CREATE TABLE IF NOT EXISTS audit_log (
+                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp   TEXT    NOT NULL,
+                    username    TEXT    NOT NULL,
+                    action      TEXT    NOT NULL,
+                    target      TEXT    NOT NULL DEFAULT '',
+                    details     TEXT    NOT NULL DEFAULT ''
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_audit_log_timestamp
+                    ON audit_log (timestamp DESC);
                 """;
             cmd.ExecuteNonQuery();
         }
@@ -214,6 +226,114 @@ namespace VisionCore.Core.Services
             var conn = new SqliteConnection($"Data Source={_dbPath}");
             conn.Open();
             return conn;
+        }
+
+        // ── Audit log ────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Records an audit-log entry for a user-initiated configuration or
+        /// camera action (add/edit/delete camera, start/stop, settings saved,
+        /// config import/export, etc.).
+        ///
+        /// <paramref name="username"/> defaults to the Windows logon name of the
+        /// current user (<see cref="Environment.UserName"/>) if not provided —
+        /// VisionCore has no separate login system, so the OS account identifies
+        /// "who did it" for compliance purposes.
+        /// </summary>
+        public Task WriteAuditLogAsync(string action, string target = "", string details = "", string? username = null)
+        {
+            try
+            {
+                using var conn = OpenConnection();
+                using var cmd  = conn.CreateCommand();
+                cmd.CommandText = """
+                    INSERT INTO audit_log (timestamp, username, action, target, details)
+                    VALUES (@ts, @user, @action, @target, @details)
+                    """;
+                cmd.Parameters.AddWithValue("@ts",      DateTime.UtcNow.ToString("o"));
+                cmd.Parameters.AddWithValue("@user",    username ?? Environment.UserName);
+                cmd.Parameters.AddWithValue("@action",  action);
+                cmd.Parameters.AddWithValue("@target",  target);
+                cmd.Parameters.AddWithValue("@details", details);
+                cmd.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                // Audit logging must never crash the calling operation.
+                _logger.LogWarning(ex, "Failed to write audit log entry for action '{Action}'.", action);
+            }
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Returns the most recent audit-log entries, newest first.
+        /// </summary>
+        /// <param name="limit">Maximum number of entries to return (default 500).</param>
+        public Task<List<AuditLogEntry>> GetAuditLogAsync(int limit = 500)
+        {
+            var results = new List<AuditLogEntry>();
+            try
+            {
+                using var conn = OpenConnection();
+                using var cmd  = conn.CreateCommand();
+                cmd.CommandText = """
+                    SELECT timestamp, username, action, target, details
+                    FROM audit_log
+                    ORDER BY id DESC
+                    LIMIT @limit
+                    """;
+                cmd.Parameters.AddWithValue("@limit", limit);
+
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    results.Add(new AuditLogEntry
+                    {
+                        TimestampUtc = DateTime.Parse(reader.GetString(0)).ToUniversalTime(),
+                        Username     = reader.GetString(1),
+                        Action       = reader.GetString(2),
+                        Target       = reader.GetString(3),
+                        Details      = reader.GetString(4),
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to read audit log.");
+            }
+            return Task.FromResult(results);
+        }
+
+        /// <summary>
+        /// Exports the full audit log to a CSV file
+        /// (Timestamp, User, Action, Target, Details columns).
+        /// </summary>
+        public async Task ExportAuditLogAsync(string path)
+        {
+            var entries = await GetAuditLogAsync(limit: int.MaxValue);
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("Timestamp (UTC),User,Action,Target,Details");
+            foreach (var e in entries)
+            {
+                sb.AppendLine(string.Join(",",
+                    e.TimestampUtc.ToString("o"),
+                    CsvEscape(e.Username),
+                    CsvEscape(e.Action),
+                    CsvEscape(e.Target),
+                    CsvEscape(e.Details)));
+            }
+
+            await File.WriteAllTextAsync(path, sb.ToString());
+            _logger.LogInformation("Audit log exported to '{Path}' ({Count} entries).", path, entries.Count);
+        }
+
+        private static string CsvEscape(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return string.Empty;
+            if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
+                return "\"" + value.Replace("\"", "\"\"") + "\"";
+            return value;
         }
     }
 

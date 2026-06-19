@@ -231,6 +231,7 @@ namespace VisionCore.WPF
                     services.AddSingleton<DashboardViewModel>();
                     services.AddSingleton<SettingsViewModel>();
                     services.AddSingleton<LogsViewModel>();
+                    services.AddSingleton<AuditLogViewModel>();
                     services.AddTransient<CameraEditViewModel>();
 
                     // ── Shell window ───────────────────────────────────────

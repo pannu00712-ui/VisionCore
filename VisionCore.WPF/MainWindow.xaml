@@ -115,6 +115,12 @@
                             Style="{StaticResource NavItem}"
                             Click="NavSettings_Click"
                             Margin="0,0,0,2"/>
+
+                    <Button x:Name="NavAuditLog"
+                            Content="🛡  Audit Log"
+                            Style="{StaticResource NavItem}"
+                            Click="NavAuditLog_Click"
+                            Margin="0,0,0,2"/>
                 </StackPanel>
 
             </DockPanel>
@@ -138,6 +144,10 @@
                                 Visibility="Collapsed"/>
 
             <views:SettingsView x:Name="PageSettings"
+                                Grid.Row="0"
+                                Visibility="Collapsed"/>
+
+            <views:AuditLogView x:Name="PageAuditLog"
                                 Grid.Row="0"
                                 Visibility="Collapsed"/>
 

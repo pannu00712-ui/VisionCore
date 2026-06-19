@@ -353,6 +353,55 @@ public async Task StopAllAsync()
             var (w, h) = ResolutionPixels(config.Resolution);
             var fps    = config.FrameRate;
 
+            // Video encoder (computed up-front so the AudioOnly fast-path can use it too)
+            var enc = config.GpuAccel switch
+            {
+                GpuAccel.NvencH264 => "h264_nvenc",
+                GpuAccel.NvencH265 => "hevc_nvenc",
+                GpuAccel.QuickSync => "h264_qsv",
+                GpuAccel.Amd      => "h264_amf",
+                _ => config.Codec switch
+                {
+                    VideoCodec.H265  => "libx265",
+                    VideoCodec.MJPEG => "mjpeg",   // software-only; ignores GpuAccel
+                    _                => "libx264"
+                }
+            };
+
+            // ── Audio-only fast path ──────────────────────────────────────────
+            // Generates a black 640x360 video frame with an audio-level visualizer
+            // (FFmpeg lavfi color source + showvolume filter on the captured audio),
+            // since AudioOnly streams still need a video track for ONVIF/RTSP clients.
+            if (config.Source == CameraSource.AudioOnly)
+            {
+                var aoAudioIn = config.AudioSource switch
+                {
+                    AudioSource.DesktopAudio => "audio=\"virtual-audio-capturer\"",
+                    _ => $"audio=\"{config.MicDeviceId ?? "Microphone"}\""
+                };
+
+                sb.Append($"-f lavfi -i color=c=black:s=640x360:r={fps} ");
+                sb.Append($"-f dshow -i {aoAudioIn} ");
+                sb.Append("-filter_complex \"[1:a]showvolume=w=640:h=80:f=2:c=Lime:rate=" + fps + "[vol];" +
+                          "[0:v][vol]overlay=0:H-h-10[outv]\" ");
+                sb.Append("-map \"[outv]\" -map 1:a ");
+
+                sb.Append($"-c:v {enc} -b:v {config.Bitrate}k -maxrate {config.Bitrate * 2}k " +
+                          $"-bufsize {config.Bitrate * 2}k -preset fast " +
+                          $"-g {fps * 2} -r {fps} ");
+                if (enc.Contains("nvenc")) sb.Append("-rc:v vbr_hq ");
+
+                sb.Append($"-c:a aac -b:a {config.AudioBitrate}k -ar 44100 ");
+
+                sb.Append("-f rtsp -rtsp_transport tcp ");
+                if (!string.IsNullOrEmpty(config.Username))
+                    sb.Append($"rtsp://publisher:{config.Password}@127.0.0.1:8554/{config.RtspPath}");
+                else
+                    sb.Append($"rtsp://127.0.0.1:8554/{config.RtspPath}");
+
+                return sb.ToString().Trim();
+            }
+
             switch (config.Source)
             {
                 case CameraSource.Screen:
@@ -371,7 +420,8 @@ public async Task StopAllAsync()
 
                 case CameraSource.Webcam:
                     var webcam = config.WebcamDeviceId ?? "video=0";
-                    sb.Append($"-f dshow -framerate {fps} -video_size {w}x{h} -i \"{webcam}\" ");
+                    var autoRot = config.Rotation == VideoRotation.Auto ? " -autorotate 1" : "";
+                    sb.Append($"-f dshow{autoRot} -framerate {fps} -video_size {w}x{h} -i \"{webcam}\" ");
                     break;
 
                 case CameraSource.Combined:
@@ -401,6 +451,12 @@ public async Task StopAllAsync()
                         : $"title={config.WindowTitle}";
                     sb.Append($"-f gdigrab -framerate {fps} -draw_mouse 0 -i \"{winTitle}\" ");
                     break;
+
+                case CameraSource.StaticImage:
+                    // Loop a single image file as a continuous video stream.
+                    var imgPath = (config.StaticImagePath ?? string.Empty).Replace("\\", "/");
+                    sb.Append($"-loop 1 -framerate {fps} -i \"{imgPath}\" ");
+                    break;
             }
 
             // ── Audio ──────────────────────────────────────────────────────
@@ -421,22 +477,31 @@ public async Task StopAllAsync()
             sb.Append(BuildFilters(config, w, h));
 
             // ── Video encoder ──────────────────────────────────────────────
-            var enc = config.GpuAccel switch
+            if (config.Codec == VideoCodec.MJPEG && config.GpuAccel == GpuAccel.None)
             {
-                GpuAccel.NvencH264 => "h264_nvenc",
-                GpuAccel.NvencH265 => "hevc_nvenc",
-                GpuAccel.QuickSync => "h264_qsv",
-                GpuAccel.Amd      => "h264_amf",
-                _ => config.Codec == VideoCodec.H265 ? "libx265" : "libx264"
-            };
-            sb.Append($"-c:v {enc} -b:v {config.Bitrate}k -maxrate {config.Bitrate * 2}k " +
-                      $"-bufsize {config.Bitrate * 2}k -preset fast " +
-                      $"-g {fps * 2} -r {fps} ");
-            if (enc.Contains("nvenc")) sb.Append("-rc:v vbr_hq ");
+                // MJPEG uses constant quality (-q:v 2–31, lower = better).
+                // Derive quality from bitrate: map 512–10240 kbps → q 25–2.
+                var q = Math.Clamp((int)(25 - (config.Bitrate - 512.0) / (10240 - 512) * 23), 2, 25);
+                sb.Append($"-c:v mjpeg -q:v {q} -r {fps} ");
+            }
+            else
+            {
+                sb.Append($"-c:v {enc} -b:v {config.Bitrate}k -maxrate {config.Bitrate * 2}k " +
+                          $"-bufsize {config.Bitrate * 2}k -preset fast " +
+                          $"-g {fps * 2} -r {fps} ");
+                if (enc.Contains("nvenc")) sb.Append("-rc:v vbr_hq ");
+            }
 
             // ── Audio encoder ──────────────────────────────────────────────
             if (config.AudioSource != AudioSource.None)
-                sb.Append($"-c:a aac -b:a {config.AudioBitrate}k -ar 44100 ");
+            {
+                if (config.AudioCodec == AudioCodec.G711ULaw)
+                    // G.711 µ-law: mandatory ONVIF Profile S codec; 8 kHz mono, 64 kbps fixed.
+                    // RTP payload type 0 — no explicit -b:a needed.
+                    sb.Append("-c:a pcm_mulaw -ar 8000 -ac 1 ");
+                else
+                    sb.Append($"-c:a aac -b:a {config.AudioBitrate}k -ar 44100 ");
+            }
             else
                 sb.Append("-an ");
 
@@ -466,6 +531,24 @@ public async Task StopAllAsync()
             // Scale
             parts.Add($"{lastLabel}scale={w}:{h}:flags=lanczos[scaled]");
             lastLabel = "[scaled]";
+
+            // Rotation / flip (mirrors DeskCamera: Auto, None, R90, L90, FlipH, FlipV, 180)
+            var rotFilter = config.Rotation switch
+            {
+                VideoRotation.R90      => "transpose=1",          // 90° clockwise
+                VideoRotation.L90      => "transpose=2",          // 90° counter-clockwise
+                VideoRotation.FlipH    => "hflip",
+                VideoRotation.FlipV    => "vflip",
+                VideoRotation.Rotate180 => "hflip,vflip",
+                VideoRotation.Auto     => null,                   // handled via -autorotate input flag
+                _                      => null                    // VideoRotation.None — pass-through
+            };
+            if (rotFilter != null)
+            {
+                var rotNext = $"[rot{parts.Count}]";
+                parts.Add($"{lastLabel}{rotFilter}{rotNext}");
+                lastLabel = rotNext;
+            }
 
             // Combined mode: PiP webcam overlay
             if (config.Source == CameraSource.Combined)

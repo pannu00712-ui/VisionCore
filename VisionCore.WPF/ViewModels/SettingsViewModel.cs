@@ -27,6 +27,7 @@ namespace VisionCore.WPF.ViewModels
         private readonly SettingsService            _settings;
         private readonly MediaMtxDownloader         _downloader;
         private readonly RestApiService             _api;
+        private readonly UpnpPortMappingService     _upnp;
 
         // ── Busy state ────────────────────────────────────────────────────────
         private bool   _isBusy;
@@ -72,6 +73,25 @@ namespace VisionCore.WPF.ViewModels
         }
 
         public string[] ThemeOptions { get; } = { "Dark", "Light", "System" };
+
+        // ══════════════════════════════════════════════════════════════════════
+        // UPnP port mapping
+        // ══════════════════════════════════════════════════════════════════════
+
+        private bool   _enableUpnp;
+        private string _upnpStatusText = "UPnP is disabled.";
+
+        /// <summary>
+        /// Whether VisionCore should attempt to open router port mappings (RTSP,
+        /// REST API, ONVIF range) via UPnP. Default false. Takes effect on next
+        /// service start/restart; status is always shown below regardless of result.
+        /// </summary>
+        public bool EnableUpnp { get => _enableUpnp; set => Set(ref _enableUpnp, value); }
+
+        /// <summary>Human-readable UPnP status (Disabled / Success + mapped ports / Failed + reason).</summary>
+        public string UpnpStatusText { get => _upnpStatusText; set { Set(ref _upnpStatusText, value); OnPropertyChanged(nameof(HasUpnpStatusText)); } }
+
+        public bool HasUpnpStatusText => !string.IsNullOrEmpty(_upnpStatusText);
 
         // ══════════════════════════════════════════════════════════════════════
         // REST API settings
@@ -148,6 +168,7 @@ namespace VisionCore.WPF.ViewModels
         public ICommand OpenSwaggerCommand       { get; }
         public ICommand ExportConfigCommand      { get; }
         public ICommand ImportConfigCommand      { get; }
+        public ICommand RefreshUpnpStatusCommand { get; }
 
         // ── Constructor ───────────────────────────────────────────────────────
 
@@ -155,12 +176,14 @@ namespace VisionCore.WPF.ViewModels
             ILogger<SettingsViewModel> logger,
             SettingsService            settings,
             MediaMtxDownloader         downloader,
-            RestApiService             api)
+            RestApiService             api,
+            UpnpPortMappingService     upnp)
         {
             _logger     = logger;
             _settings   = settings;
             _downloader = downloader;
             _api        = api;
+            _upnp       = upnp;
 
             SaveCommand            = new AsyncRelayCommand(async _ => await SaveAsync());
             DiscardCommand         = new RelayCommand(_ => LoadFromModel());
@@ -175,6 +198,11 @@ namespace VisionCore.WPF.ViewModels
             OpenSwaggerCommand     = new RelayCommand(_ => OpenSwagger());
             ExportConfigCommand    = new AsyncRelayCommand(async _ => await ExportConfigAsync());
             ImportConfigCommand    = new AsyncRelayCommand(async _ => await ImportConfigAsync());
+            RefreshUpnpStatusCommand = new RelayCommand(_ => RefreshUpnpStatus());
+
+            _upnp.StatusChanged += (_, _) =>
+                System.Windows.Application.Current?.Dispatcher.Invoke(RefreshUpnpStatus);
+            RefreshUpnpStatus();
         }
 
         // ── Initialise ────────────────────────────────────────────────────────
@@ -202,6 +230,7 @@ namespace VisionCore.WPF.ViewModels
             RestApiEnabled   = s.RestApiEnabled;
             RestApiPort      = s.RestApiPort;
             RestApiToken     = s.RestApiToken     ?? string.Empty;
+            EnableUpnp       = s.EnableUpnp;
 
             LogLevel         = s.LogLevel         ?? "Information";
             OnvifMode        = s.OnvifMode;
@@ -226,12 +255,14 @@ namespace VisionCore.WPF.ViewModels
                 s.RestApiEnabled   = RestApiEnabled;
                 s.RestApiPort      = RestApiPort;
                 s.RestApiToken     = RestApiToken;
+                s.EnableUpnp       = EnableUpnp;
                 s.LogLevel         = LogLevel;
 
                 await _settings.SaveAppSettingsAsync(s);
 
                 StatusMessage = "Settings saved.";
                 _logger.LogInformation("App settings saved.");
+                await _settings.WriteAuditLogAsync("SettingsSaved");
             }
             catch (Exception ex)
             {
@@ -245,6 +276,19 @@ namespace VisionCore.WPF.ViewModels
         }
 
         // ── API token helpers ─────────────────────────────────────────────────
+
+        private void RefreshUpnpStatus()
+        {
+            UpnpStatusText = _upnp.Status switch
+            {
+                UpnpStatus.Disabled     => "UPnP is disabled.",
+                UpnpStatus.NotAttempted => "UPnP has not run yet — start (or restart) the service to apply.",
+                UpnpStatus.InProgress   => "Discovering router…",
+                UpnpStatus.Success      => $"✓ {_upnp.StatusMessage}",
+                UpnpStatus.Failed       => $"✗ {_upnp.StatusMessage}",
+                _                       => string.Empty,
+            };
+        }
 
         private void RegenerateToken()
         {
@@ -360,6 +404,7 @@ namespace VisionCore.WPF.ViewModels
                 await _settings.ExportConfigAsync(dialog.FileName);
                 StatusMessage = $"Configuration exported to '{dialog.FileName}'.";
                 _logger.LogInformation("Settings: config exported to '{Path}'.", dialog.FileName);
+                await _settings.WriteAuditLogAsync("ConfigExported", dialog.FileName);
             }
             catch (Exception ex)
             {
@@ -401,6 +446,7 @@ namespace VisionCore.WPF.ViewModels
                 StatusMessage = $"Configuration imported ({count} camera(s)). Restart the app to apply all changes.";
                 _logger.LogInformation(
                     "Settings: config imported from '{Path}' ({Count} cameras).", dialog.FileName, count);
+                await _settings.WriteAuditLogAsync("ConfigImported", dialog.FileName, $"{count} camera(s)");
             }
             catch (Exception ex)
             {
