@@ -1,0 +1,279 @@
+<UserControl x:Class="VisionCore.WPF.Views.RecordingView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:VisionCore.WPF.ViewModels"
+             xmlns:models="clr-namespace:VisionCore.Core.Models;assembly=VisionCore.Core"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:RecordingViewModel}"
+             Background="{StaticResource Brush.Background}"
+             FontFamily="{StaticResource Font.Body}"
+             FontSize="{StaticResource FontSize.MD}">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="24">
+
+            <!-- ── License nudge (only shown when not Pro) ─────────────────── -->
+            <Border Padding="12,10"
+                    CornerRadius="{StaticResource Radius.MD}"
+                    Background="{StaticResource Brush.WarningLight}"
+                    BorderBrush="{StaticResource Brush.Warning}"
+                    BorderThickness="1"
+                    Margin="0,0,0,20"
+                    Visibility="{Binding IsLicensed, Converter={StaticResource InvertBoolToVis}}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="⚠  " Foreground="{StaticResource Brush.Warning}" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding LicenseNudge}"
+                               Foreground="{StaticResource Brush.Warning}"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
+            <!-- ── Enable / Status row ─────────────────────────────────────── -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <CheckBox IsChecked="{Binding RecordingEnabled}"
+                                      IsEnabled="{Binding IsLicensed}"
+                                      VerticalContentAlignment="Center"
+                                      Margin="0,0,10,0"/>
+                            <TextBlock Text="Enable local recording"
+                                       Style="{StaticResource Text.Heading}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding StatusText}"
+                                   Style="{StaticResource Text.Secondary}"
+                                   FontSize="{StaticResource FontSize.SM}"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <!-- Live indicator + toggle -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="8" Height="8" CornerRadius="4"
+                                Margin="0,0,8,0">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsCurrentlyRecording}" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource Brush.Danger}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsCurrentlyRecording}" Value="False">
+                                            <Setter Property="Background" Value="{StaticResource Brush.Text.Disabled}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                        <Button Style="{StaticResource Btn.Secondary}"
+                                Command="{Binding ToggleRecordingCommand}"
+                                MinWidth="90">
+                            <Button.Content>
+                                <TextBlock>
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsCurrentlyRecording}" Value="True">
+                                                    <Setter Property="Text" Value="Stop"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsCurrentlyRecording}" Value="False">
+                                                    <Setter Property="Text" Value="Start now"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Button.Content>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ── Output folder ───────────────────────────────────────────── -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16"
+                    IsEnabled="{Binding RecordingEnabled}">
+                <StackPanel>
+                    <TextBlock Text="OUTPUT FOLDER"
+                               Style="{StaticResource Text.SectionHeader}"
+                               Margin="0,0,0,12"/>
+
+                    <TextBlock Text="Folder"
+                               Style="{StaticResource Text.Label}"
+                               Margin="0,0,0,6"/>
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding OutputFolder, UpdateSourceTrigger=PropertyChanged}"
+                                 Padding="{StaticResource Spacing.Input}"
+                                 VerticalContentAlignment="Center"
+                                 Margin="0,0,6,0"
+                                 ToolTip="Leave blank to use %USERPROFILE%\Videos\VisionCore"/>
+                        <Button Grid.Column="1"
+                                Content="Browse…"
+                                Style="{StaticResource Btn.Secondary}"
+                                Command="{Binding BrowseFolderCommand}"
+                                Margin="0,0,6,0"/>
+                        <Button Grid.Column="2"
+                                Content="Open"
+                                Style="{StaticResource Btn.Ghost}"
+                                Command="{Binding OpenFolderCommand}"
+                                ToolTip="Open folder in Explorer"/>
+                    </Grid>
+
+                    <TextBlock Text="File name template"
+                               Style="{StaticResource Text.Label}"
+                               Margin="0,0,0,6"/>
+                    <TextBox Text="{Binding FileNameTemplate, UpdateSourceTrigger=PropertyChanged}"
+                             Padding="{StaticResource Spacing.Input}"
+                             VerticalContentAlignment="Center"
+                             FontFamily="{StaticResource Font.Mono}"
+                             FontSize="{StaticResource FontSize.SM}"
+                             Margin="0,0,0,4"/>
+                    <TextBlock Text="Tokens: {camera}  {date}  {time}   Extension is always .mp4"
+                               Style="{StaticResource Text.Secondary}"
+                               FontSize="{StaticResource FontSize.XS}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- ── Segmentation & Trigger ───────────────────────────────────── -->
+            <Grid Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Mode -->
+                <Border Grid.Column="0" Style="{StaticResource Card}"
+                        IsEnabled="{Binding RecordingEnabled}">
+                    <StackPanel>
+                        <TextBlock Text="SEGMENTATION"
+                                   Style="{StaticResource Text.SectionHeader}"
+                                   Margin="0,0,0,12"/>
+
+                        <TextBlock Text="Mode"
+                                   Style="{StaticResource Text.Label}"
+                                   Margin="0,0,0,6"/>
+                        <ComboBox ItemsSource="{Binding Modes}"
+                                  SelectedItem="{Binding SelectedMode}"
+                                  Margin="0,0,0,12"/>
+
+                        <TextBlock Text="Segment length (minutes)"
+                                   Style="{StaticResource Text.Label}"
+                                   Margin="0,0,0,6"
+                                   Visibility="{Binding IsSegmented, Converter={StaticResource BoolToVis}}"/>
+                        <TextBox Text="{Binding SegmentMinutes, UpdateSourceTrigger=PropertyChanged}"
+                                 Padding="{StaticResource Spacing.Input}"
+                                 VerticalContentAlignment="Center"
+                                 Visibility="{Binding IsSegmented, Converter={StaticResource BoolToVis}}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Trigger -->
+                <Border Grid.Column="2" Style="{StaticResource Card}"
+                        IsEnabled="{Binding RecordingEnabled}">
+                    <StackPanel>
+                        <TextBlock Text="TRIGGER"
+                                   Style="{StaticResource Text.SectionHeader}"
+                                   Margin="0,0,0,12"/>
+
+                        <TextBlock Text="Start recording when"
+                                   Style="{StaticResource Text.Label}"
+                                   Margin="0,0,0,6"/>
+                        <ComboBox ItemsSource="{Binding Triggers}"
+                                  SelectedItem="{Binding SelectedTrigger}"
+                                  Margin="0,0,0,12"/>
+
+                        <TextBlock Text="Post-motion duration (sec)"
+                                   Style="{StaticResource Text.Label}"
+                                   Margin="0,0,0,6"
+                                   Visibility="{Binding IsMotionTrigger, Converter={StaticResource BoolToVis}}"/>
+                        <TextBox Text="{Binding PostMotionSeconds, UpdateSourceTrigger=PropertyChanged}"
+                                 Padding="{StaticResource Spacing.Input}"
+                                 VerticalContentAlignment="Center"
+                                 Visibility="{Binding IsMotionTrigger, Converter={StaticResource BoolToVis}}"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ── Retention ────────────────────────────────────────────────── -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16"
+                    IsEnabled="{Binding RecordingEnabled}">
+                <StackPanel>
+                    <TextBlock Text="RETENTION"
+                               Style="{StaticResource Text.SectionHeader}"
+                               Margin="0,0,0,12"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Delete after (days)"
+                                       Style="{StaticResource Text.Label}"
+                                       Margin="0,0,0,6"/>
+                            <TextBox Text="{Binding RetentionDays, UpdateSourceTrigger=PropertyChanged}"
+                                     Padding="{StaticResource Spacing.Input}"
+                                     VerticalContentAlignment="Center"/>
+                            <TextBlock Text="0 = keep forever"
+                                       Style="{StaticResource Text.Secondary}"
+                                       FontSize="{StaticResource FontSize.XS}"
+                                       Margin="0,3,0,0"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Disk quota (MB)"
+                                       Style="{StaticResource Text.Label}"
+                                       Margin="0,0,0,6"/>
+                            <TextBox Text="{Binding MaxDiskMb, UpdateSourceTrigger=PropertyChanged}"
+                                     Padding="{StaticResource Spacing.Input}"
+                                     VerticalContentAlignment="Center"/>
+                            <TextBlock Text="0 = no limit"
+                                       Style="{StaticResource Text.Secondary}"
+                                       FontSize="{StaticResource FontSize.XS}"
+                                       Margin="0,3,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- ── Audio ────────────────────────────────────────────────────── -->
+            <Border Style="{StaticResource Card}"
+                    IsEnabled="{Binding RecordingEnabled}">
+                <StackPanel>
+                    <TextBlock Text="AUDIO"
+                               Style="{StaticResource Text.SectionHeader}"
+                               Margin="0,0,0,12"/>
+
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox IsChecked="{Binding RecordAudio}"
+                                  VerticalContentAlignment="Center"
+                                  Margin="0,0,10,0"/>
+                        <TextBlock Text="Include audio track in recordings"
+                                   Style="{StaticResource Text.Secondary}"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

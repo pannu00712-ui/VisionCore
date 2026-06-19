@@ -1,0 +1,252 @@
+<Window x:Class="VisionCore.WPF.Views.ScreenPickerView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:VisionCore.WPF.ViewModels"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance vm:ScreenPickerViewModel, IsDesignTimeCreatable=False}"
+        Title="Select Screen / Region"
+        Width="700" Height="620"
+        MinWidth="560" MinHeight="500"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResizeWithGrip"
+        ShowInTaskbar="False"
+        Background="{StaticResource Brush.Background}"
+        FontFamily="{StaticResource Font.Body}"
+        FontSize="{StaticResource FontSize.MD}">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="52"/>   <!-- header -->
+            <RowDefinition Height="*"/>    <!-- content -->
+            <RowDefinition Height="Auto"/> <!-- action bar -->
+        </Grid.RowDefinitions>
+
+        <!-- ── Header ──────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0"
+                Background="{StaticResource Brush.Surface}"
+                BorderBrush="{StaticResource Brush.Border}"
+                BorderThickness="0,0,0,1">
+            <TextBlock Text="Select Screen / Region"
+                       Style="{StaticResource Text.Heading}"
+                       VerticalAlignment="Center"
+                       Margin="20,0"/>
+        </Border>
+
+        <!-- ── Content ─────────────────────────────────────────────────────── -->
+        <Grid Grid.Row="1" Margin="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ── Left: Monitor list ──────────────────────────────────────── -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0"
+                           Text="MONITORS"
+                           Style="{StaticResource Text.SectionHeader}"
+                           Margin="0,0,0,8"/>
+
+                <ListBox Grid.Row="1"
+                         ItemsSource="{Binding Monitors}"
+                         SelectedItem="{Binding SelectedMonitor}"
+                         Background="{StaticResource Brush.Surface}"
+                         BorderBrush="{StaticResource Brush.Border}"
+                         BorderThickness="1"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="6,8">
+                                <!-- Thumbnail -->
+                                <Border Background="{StaticResource Brush.Background}"
+                                        BorderBrush="{StaticResource Brush.Border}"
+                                        BorderThickness="1"
+                                        Height="80"
+                                        Margin="0,0,0,6">
+                                    <Grid>
+                                        <TextBlock Text="No preview"
+                                                   Style="{StaticResource Text.Secondary}"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   Visibility="{Binding Thumbnail,
+                                                       Converter={StaticResource BoolToVis},
+                                                       ConverterParameter=Inverse}"/>
+                                        <Image Source="{Binding Thumbnail}"
+                                               Stretch="Uniform"/>
+                                    </Grid>
+                                </Border>
+                                <!-- Label -->
+                                <TextBlock Text="{Binding Label}"
+                                           Style="{StaticResource Text.Secondary}"
+                                           TextWrapping="Wrap"
+                                           FontSize="11"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+
+            <!-- ── Right: Region picker + preview ──────────────────────────── -->
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Capture mode toggle -->
+                <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                    <TextBlock Text="CAPTURE MODE"
+                               Style="{StaticResource Text.SectionHeader}"
+                               Margin="0,0,0,8"/>
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton Content="Full monitor"
+                                     IsChecked="{Binding FullMonitor}"
+                                     Margin="0,0,20,0"
+                                     Foreground="{StaticResource Brush.Text.Primary}"/>
+                        <RadioButton Content="Custom region"
+                                     IsChecked="{Binding IsCustomRegion}"
+                                     Foreground="{StaticResource Brush.Text.Primary}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Region coordinates -->
+                <Border Grid.Row="1"
+                        Background="{StaticResource Brush.Surface}"
+                        BorderBrush="{StaticResource Brush.Border}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource Radius.SM}"
+                        Padding="12"
+                        Margin="0,0,0,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- X -->
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="X" Style="{StaticResource Text.Label}"/>
+                            <TextBox Text="{Binding RegionX, UpdateSourceTrigger=PropertyChanged}"
+                                     IsEnabled="{Binding IsCustomRegion}"/>
+                        </StackPanel>
+
+                        <!-- Y -->
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Y" Style="{StaticResource Text.Label}"/>
+                            <TextBox Text="{Binding RegionY, UpdateSourceTrigger=PropertyChanged}"
+                                     IsEnabled="{Binding IsCustomRegion}"/>
+                        </StackPanel>
+
+                        <!-- Width -->
+                        <StackPanel Grid.Column="4">
+                            <TextBlock Text="Width" Style="{StaticResource Text.Label}"/>
+                            <TextBox Text="{Binding RegionW, UpdateSourceTrigger=PropertyChanged}"
+                                     IsEnabled="{Binding IsCustomRegion}"/>
+                        </StackPanel>
+
+                        <!-- Height -->
+                        <StackPanel Grid.Column="6">
+                            <TextBlock Text="Height" Style="{StaticResource Text.Label}"/>
+                            <TextBox Text="{Binding RegionH, UpdateSourceTrigger=PropertyChanged}"
+                                     IsEnabled="{Binding IsCustomRegion}"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Live preview -->
+                <Grid Grid.Row="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Preview header + refresh -->
+                    <Grid Grid.Row="0" Margin="0,0,0,8">
+                        <TextBlock Text="PREVIEW"
+                                   Style="{StaticResource Text.SectionHeader}"
+                                   VerticalAlignment="Center"/>
+                        <Button Content="↺  Refresh"
+                                Style="{StaticResource Btn.Ghost}"
+                                HorizontalAlignment="Right"
+                                Command="{Binding RefreshPreviewCommand}"/>
+                    </Grid>
+
+                    <!-- Preview image area -->
+                    <Border Grid.Row="1"
+                            Background="{StaticResource Brush.Surface}"
+                            BorderBrush="{StaticResource Brush.Border}"
+                            BorderThickness="1"
+                            CornerRadius="{StaticResource Radius.SM}">
+                        <Grid>
+                            <!-- Loading indicator -->
+                            <TextBlock Text="Capturing…"
+                                       Style="{StaticResource Text.Secondary}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"/>
+
+                            <!-- No preview -->
+                            <StackPanel HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Visibility="{Binding RegionPreview,
+                                            Converter={StaticResource BoolToVis},
+                                            ConverterParameter=Inverse}">
+                                <TextBlock Text="🖥"
+                                           FontSize="32"
+                                           HorizontalAlignment="Center"
+                                           Foreground="{StaticResource Brush.Text.Disabled}"/>
+                                <TextBlock Text="Click Refresh to preview"
+                                           Style="{StaticResource Text.Secondary}"
+                                           Margin="0,8,0,0"/>
+                            </StackPanel>
+
+                            <!-- Preview image -->
+                            <Image Source="{Binding RegionPreview}"
+                                   Stretch="Uniform"
+                                   Margin="8"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Grid>
+
+        <!-- ── Action bar ───────────────────────────────────────────────────── -->
+        <Border Grid.Row="2"
+                Background="{StaticResource Brush.Surface}"
+                BorderBrush="{StaticResource Brush.Border}"
+                BorderThickness="0,1,0,0"
+                Padding="20,12">
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+                <Button Content="Cancel"
+                        Style="{StaticResource Btn.Ghost}"
+                        IsCancel="True"
+                        Width="90"
+                        Margin="0,0,10,0"/>
+                <Button Content="✓  Use this region"
+                        Style="{StaticResource Btn.Primary}"
+                        IsDefault="True"
+                        Width="150"
+                        Command="{Binding ConfirmCommand}"
+                        Click="OkButton_Click"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

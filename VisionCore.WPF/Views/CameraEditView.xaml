@@ -1,0 +1,481 @@
+<Window x:Class="VisionCore.WPF.Views.CameraEditView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:VisionCore.WPF.ViewModels"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance vm:CameraEditViewModel, IsDesignTimeCreatable=False}"
+        Title="{Binding Title}"
+        Width="620" Height="740"
+        MinWidth="520" MinHeight="600"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResizeWithGrip"
+        ShowInTaskbar="False"
+        Background="{StaticResource Brush.Background}"
+        FontFamily="{StaticResource Font.Body}"
+        FontSize="{StaticResource FontSize.MD}">
+
+    <Window.Resources>
+        <!-- Collapse a row when a condition is false -->
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </Window.Resources>
+
+    <!-- ── Root layout: title bar + scrollable content + action bar ───────── -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="56"/>     <!-- header -->
+            <RowDefinition Height="*"/>      <!-- content -->
+            <RowDefinition Height="Auto"/>   <!-- action bar -->
+        </Grid.RowDefinitions>
+
+        <!-- ── Header ──────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0"
+                Background="{StaticResource Brush.Surface}"
+                BorderBrush="{StaticResource Brush.Border}"
+                BorderThickness="0,0,0,1">
+            <Grid Margin="20,0">
+                <TextBlock Text="{Binding Title}"
+                           Style="{StaticResource Text.Heading}"
+                           VerticalAlignment="Center"/>
+                <!-- GPU summary badge -->
+                <Border HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Style="{StaticResource Badge.Neutral}"
+                        Visibility="{Binding IsDetectingGpu, Converter={StaticResource BoolToVis},
+                                     ConverterParameter=Inverse}">
+                    <TextBlock Text="{Binding GpuSummary}"
+                               Style="{StaticResource Text.Secondary}"/>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ── Scrollable form ─────────────────────────────────────────────── -->
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Padding="20,16,20,8">
+
+            <StackPanel>
+
+                <!-- ══ SECTION: Identity ════════════════════════════════════ -->
+                <TextBlock Text="IDENTITY"
+                           Style="{StaticResource Text.SectionHeader}"/>
+
+                <!-- Name -->
+                <StackPanel Style="{StaticResource FormField}">
+                    <TextBlock Text="Camera name *" Style="{StaticResource Text.Label}"/>
+                    <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                             MaxLength="80"/>
+                    <TextBlock Text="{Binding ValidationErrors[Name]}"
+                               Style="{StaticResource Text.Error}"
+                               Visibility="{Binding ValidationErrors[Name],
+                                            Converter={StaticResource BoolToVis}}"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <!-- RTSP path + port -->
+                <Grid Margin="0,0,0,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="110"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="RTSP path *" Style="{StaticResource Text.Label}"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding RtspPath, UpdateSourceTrigger=PropertyChanged}"
+                                     MaxLength="120"
+                                     ToolTip="e.g. cam1  →  rtsp://host:8554/cam1"/>
+                            <Button Grid.Column="1"
+                                    Content="Auto"
+                                    Style="{StaticResource Btn.Ghost}"
+                                    Command="{Binding AutoFillPathCommand}"
+                                    Margin="4,0,0,0"
+                                    Height="34"
+                                    ToolTip="Auto-fill from camera name"/>
+                        </Grid>
+                        <TextBlock Text="{Binding ValidationErrors[RtspPath]}"
+                                   Style="{StaticResource Text.Error}"
+                                   Margin="0,3,0,0"
+                                   Visibility="{Binding ValidationErrors[RtspPath],
+                                                Converter={StaticResource BoolToVis}}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Port" Style="{StaticResource Text.Label}"/>
+                        <TextBox Text="{Binding RtspPort, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                </Grid>
+
+                <Separator/>
+
+                <!-- ══ SECTION: Source ══════════════════════════════════════ -->
+                <TextBlock Text="SOURCE" Style="{StaticResource Text.SectionHeader}"/>
+
+                <StackPanel Style="{StaticResource FormField}">
+                    <TextBlock Text="Capture source" Style="{StaticResource Text.Label}"/>
+                    <ComboBox ItemsSource="{Binding SourceOptions}"
+                              SelectedItem="{Binding Source}"/>
+                </StackPanel>
+
+                <!-- Webcam device (shown for Webcam / Combined) -->
+                <StackPanel Style="{StaticResource FormField}"
+                            Visibility="{Binding IsWebcamVisible, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="Webcam device ID" Style="{StaticResource Text.Label}"/>
+                    <TextBox Text="{Binding WebcamDeviceId, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="DirectShow device name, e.g.  video=Integrated Webcam"/>
+                </StackPanel>
+
+                <!-- Input URL (shown for ExternalRtsp / ExternalHttp) -->
+                <StackPanel Style="{StaticResource FormField}"
+                            Visibility="{Binding IsExternalSourceVisible, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="Input URL" Style="{StaticResource Text.Label}"/>
+                    <TextBox Text="{Binding InputUrl, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="e.g. rtsp://192.168.1.10:554/stream  or  http://cam/mjpeg"/>
+                </StackPanel>
+
+                <!-- App window title (shown for AppWindow) -->
+                <StackPanel Style="{StaticResource FormField}"
+                            Visibility="{Binding IsAppWindowVisible, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="Application window title" Style="{StaticResource Text.Label}"/>
+                    <TextBox Text="{Binding WindowTitle, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="Partial window title match, e.g. 'Notepad' or 'Chrome'. Leave blank to capture the first visible window."/>
+                    <TextBlock Text="Tip: partial match — 'Chrome' captures any Chrome window.
+                               Window must not be minimised during streaming."
+                               Style="{StaticResource Text.Secondary}"
+                               TextWrapping="Wrap"
+                               Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <!-- Screen region picker (shown for Screen / Combined) -->
+                <StackPanel Style="{StaticResource FormField}"
+                            Visibility="{Binding IsRegionVisible, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="Screen region" Style="{StaticResource Text.Label}"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0"
+                                Background="{StaticResource Brush.Surface}"
+                                BorderBrush="{StaticResource Brush.Border}"
+                                BorderThickness="1"
+                                CornerRadius="{StaticResource Radius.SM}"
+                                Padding="10,7">
+                            <TextBlock Text="{Binding RegionSummary}"
+                                       Style="{StaticResource Text.Secondary}"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+                        <Button Grid.Column="2"
+                                Content="Pick Screen..."
+                                Style="{StaticResource Btn.Secondary}"
+                                Command="{Binding PickScreenCommand}"
+                                Padding="12,7"/>
+                    </Grid>
+                </StackPanel>
+
+                <Separator/>
+
+                <!-- ══ SECTION: Video ═══════════════════════════════════════ -->
+                <TextBlock Text="VIDEO" Style="{StaticResource Text.SectionHeader}"/>
+
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Codec" Style="{StaticResource Text.Label}"/>
+                        <ComboBox ItemsSource="{Binding CodecOptions}"
+                                  SelectedItem="{Binding Codec}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Resolution" Style="{StaticResource Text.Label}"/>
+                        <ComboBox ItemsSource="{Binding ResolutionOptions}"
+                                  SelectedItem="{Binding Resolution}"/>
+                    </StackPanel>
+                </Grid>
+
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Frame rate (fps)" Style="{StaticResource Text.Label}"/>
+                        <TextBox Text="{Binding FrameRate, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBlock Text="{Binding ValidationErrors[FrameRate]}"
+                                   Style="{StaticResource Text.Error}"
+                                   Margin="0,3,0,0"
+                                   Visibility="{Binding ValidationErrors[FrameRate],
+                                                Converter={StaticResource BoolToVis}}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Bitrate (kbps)" Style="{StaticResource Text.Label}"/>
+                        <TextBox Text="{Binding Bitrate, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBlock Text="{Binding ValidationErrors[Bitrate]}"
+                                   Style="{StaticResource Text.Error}"
+                                   Margin="0,3,0,0"
+                                   Visibility="{Binding ValidationErrors[Bitrate],
+                                                Converter={StaticResource BoolToVis}}"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- GPU acceleration -->
+                <Grid Margin="0,0,0,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="GPU acceleration" Style="{StaticResource Text.Label}"/>
+                        <ComboBox ItemsSource="{Binding GpuAccelOptions}"
+                                  SelectedItem="{Binding GpuAccel}"/>
+                    </StackPanel>
+
+                    <Button Grid.Column="2"
+                            Content="Detect GPU"
+                            Style="{StaticResource Btn.Secondary}"
+                            Command="{Binding DetectGpuCommand}"
+                            Height="34"
+                            VerticalAlignment="Bottom"
+                            IsEnabled="{Binding IsDetectingGpu, Converter={StaticResource BoolToVis}}"/>
+                </Grid>
+
+                <Separator/>
+
+                <!-- ══ SECTION: Audio ═══════════════════════════════════════ -->
+                <TextBlock Text="AUDIO" Style="{StaticResource Text.SectionHeader}"/>
+
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Audio source" Style="{StaticResource Text.Label}"/>
+                        <ComboBox ItemsSource="{Binding AudioOptions}"
+                                  SelectedItem="{Binding AudioSource}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2"
+                                Visibility="{Binding IsAudioConfigVisible,
+                                             Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Bitrate (kbps)" Style="{StaticResource Text.Label}"/>
+                        <TextBox Text="{Binding AudioBitrate, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                </Grid>
+
+                <StackPanel Style="{StaticResource FormField}"
+                            Visibility="{Binding IsAudioConfigVisible,
+                                         Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="Microphone device ID" Style="{StaticResource Text.Label}"/>
+                    <TextBox Text="{Binding MicDeviceId, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="DirectShow audio device name, e.g. audio=Microphone (Realtek)"/>
+                </StackPanel>
+
+                <Separator/>
+
+                <!-- ══ SECTION: Auth ════════════════════════════════════════ -->
+                <TextBlock Text="AUTH" Style="{StaticResource Text.SectionHeader}"/>
+
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Username" Style="{StaticResource Text.Label}"/>
+                        <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Password" Style="{StaticResource Text.Label}"/>
+                        <PasswordBox x:Name="PwdBox"/>
+                    </StackPanel>
+                </Grid>
+
+                <Separator/>
+
+                <!-- ══ SECTION: ONVIF ═══════════════════════════════════════ -->
+                <TextBlock Text="ONVIF" Style="{StaticResource Text.SectionHeader}"/>
+
+                <Grid Margin="0,0,0,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="140"/>
+                    </Grid.ColumnDefinitions>
+
+                    <CheckBox Grid.Column="0"
+                              IsChecked="{Binding OnvifEnabled}"
+                              Content="Enable ONVIF"
+                              VerticalAlignment="Center"
+                              Margin="0,0,16,0"/>
+
+                    <StackPanel Grid.Column="3">
+                        <TextBlock Text="ONVIF port" Style="{StaticResource Text.Label}"/>
+                        <TextBox Text="{Binding OnvifPort, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEnabled="{Binding OnvifEnabled}"/>
+                        <TextBlock Text="{Binding ValidationErrors[OnvifPort]}"
+                                   Style="{StaticResource Text.Error}"
+                                   Margin="0,3,0,0"
+                                   Visibility="{Binding ValidationErrors[OnvifPort],
+                                                Converter={StaticResource BoolToVis}}"/>
+                    </StackPanel>
+                </Grid>
+
+                <Separator/>
+
+                <!-- ══ SECTION: Motion Detection ════════════════════════════ -->
+                <TextBlock Text="MOTION DETECTION" Style="{StaticResource Text.SectionHeader}"/>
+
+                <CheckBox Content="Enable motion detection"
+                          IsChecked="{Binding MotionDetection}"
+                          Margin="0,0,0,12"/>
+
+                <Grid Visibility="{Binding MotionDetection, Converter={StaticResource BoolToVis}}"
+                      Margin="0,0,0,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Pixel threshold (0–255)"
+                                   Style="{StaticResource Text.Label}"/>
+                        <TextBox Text="{Binding MotionThreshold, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Motion ratio (0–1)"
+                                   Style="{StaticResource Text.Label}"/>
+                        <TextBox Text="{Binding MotionRatio, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                </Grid>
+
+                <Separator/>
+
+                <!-- ══ SECTION: Overlays ════════════════════════════════════ -->
+                <Grid Margin="0,0,0,10">
+                    <TextBlock Text="OVERLAYS"
+                               Style="{StaticResource Text.SectionHeader}"
+                               VerticalAlignment="Center"/>
+                    <Button Content="+ Add overlay"
+                            Style="{StaticResource Btn.Ghost}"
+                            Command="{Binding AddOverlayCommand}"
+                            HorizontalAlignment="Right"
+                            FontSize="{StaticResource FontSize.SM}"/>
+                </Grid>
+
+                <!-- Overlay rows -->
+                <ItemsControl ItemsSource="{Binding Overlays}" Margin="0,0,0,20">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource Card.Flat}"
+                                    Margin="0,0,0,8">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="110"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="50"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="50"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <ComboBox Grid.Column="0"
+                                              ItemsSource="{Binding DataContext.OverlayTypeOptions,
+                                                            RelativeSource={RelativeSource AncestorType=Window}}"
+                                              SelectedItem="{Binding Type}"
+                                              Height="32"/>
+
+                                    <TextBox Grid.Column="2"
+                                             Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                                             VerticalAlignment="Center"
+                                             ToolTip="Text content (used for Text overlay type)"/>
+
+                                    <TextBox Grid.Column="4"
+                                             Text="{Binding X, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="X position"/>
+
+                                    <TextBox Grid.Column="6"
+                                             Text="{Binding Y, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="Y position"/>
+
+                                    <Button Grid.Column="8"
+                                            Content="✕"
+                                            Style="{StaticResource Btn.Icon}"
+                                            Command="{Binding DataContext.RemoveOverlayCommand,
+                                                      RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip="Remove overlay"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ── Action bar ───────────────────────────────────────────────────── -->
+        <Border Grid.Row="2"
+                Background="{StaticResource Brush.Surface}"
+                BorderBrush="{StaticResource Brush.Border}"
+                BorderThickness="0,1,0,0"
+                Padding="20,12">
+            <Grid>
+                <!-- Busy indicator -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="{Binding BusyMessage}"
+                               Style="{StaticResource Text.Secondary}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Buttons -->
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center">
+                    <Button Content="Cancel"
+                            Style="{StaticResource Btn.Secondary}"
+                            Command="{Binding CancelCommand}"
+                            MinWidth="80"
+                            Margin="0,0,8,0"/>
+                    <Button Content="Save camera"
+                            Style="{StaticResource Btn.Primary}"
+                            Command="{Binding SaveCommand}"
+                            MinWidth="120"
+                            IsDefault="True"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
