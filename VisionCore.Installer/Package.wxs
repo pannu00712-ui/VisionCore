@@ -5,14 +5,14 @@
   WiX Toolset v4 (wix4 / HeatWave) package definition.
 
   Build prerequisites
-  -------------------
-    dotnet tool install --global wix
+  ====
+    dotnet tool install ====global wix
     wix extension add WixToolset.UI.wixext
     wix extension add WixToolset.Util.wixext
     wix extension add WixToolset.Firewall.wixext
 
   Build command (from this directory)
-  ------------------------------------
+  ====
     wix build Package.wxs Directories.wxs Features.wxs UI.wxs `
          -ext WixToolset.UI.wixext    `
          -ext WixToolset.Util.wixext  `
@@ -21,8 +21,8 @@
          -o VisionCore-1.0.0-Setup.msi
 
   The publish/ folder must contain the output of:
-    dotnet publish VisionCore.WPF\VisionCore.WPF.csproj     -c Release -r win-x64 --self-contained false
-    dotnet publish VisionCore.Service\VisionCore.Service.csproj -c Release -r win-x64 --self-contained false
+    dotnet publish VisionCore.WPF\VisionCore.WPF.csproj     -c Release -r win-x64 ====self-contained false
+    dotnet publish VisionCore.Service\VisionCore.Service.csproj -c Release -r win-x64 ====self-contained false
 
   Directory layout expected inside $(var.SourceDir):
     publish\
@@ -46,17 +46,17 @@
     Compressed="yes"
     Scope="perMachine">
 
-    <!-- ── Upgrade / downgrade policy ─────────────────────────────────────── -->
+    <!-- ==== Upgrade / downgrade policy ==== -->
     <MajorUpgrade
       DowngradeErrorMessage="A newer version of VisionCore is already installed."
       Schedule="afterInstallInitialize"
       AllowDowngrades="no"
       AllowSameVersionUpgrades="no" />
 
-    <!-- ── Media / cabinet ────────────────────────────────────────────────── -->
+    <!-- ==== Media / cabinet ==== -->
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
-    <!-- ── Prerequisite: .NET 8 Desktop Runtime ───────────────────────────── -->
+    <!-- ==== Prerequisite: .NET 8 Desktop Runtime ==== -->
     <!--
       We check for the .NET 8 Windows Desktop Runtime host key.
       The bootstrapper (Bundle.wxs) will install it if missing;
@@ -66,17 +66,23 @@
       Condition="DOTNET8_DESKTOP_INSTALLED"
       Message="VisionCore requires .NET 8 Windows Desktop Runtime.  Please install it from https://dotnet.microsoft.com/download/dotnet/8.0 and run Setup again." />
 
-    <!-- ── Property: detect .NET 8 Desktop Runtime ───────────────────────── -->
+    <!-- ==== Property: detect .NET 8 Desktop Runtime (x64 or x86) ==== -->
     <Property Id="DOTNET8_DESKTOP_INSTALLED">
       <RegistrySearch
-        Id="SearchDotNet8Desktop"
+        Id="SearchDotNet8Desktop64"
         Root="HKLM"
         Key="SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App"
         Name="8.0.0"
         Type="raw" />
+      <RegistrySearch
+        Id="SearchDotNet8Desktop86"
+        Root="HKLM"
+        Key="SOFTWARE\dotnet\Setup\InstalledVersions\x86\sharedfx\Microsoft.WindowsDesktop.App"
+        Name="8.0.0"
+        Type="raw" />
     </Property>
 
-    <!-- ── Property: detect existing service install path (for upgrades) ──── -->
+    <!-- ==== Property: detect existing service install path (for upgrades) ==== -->
     <Property Id="INSTALLDIR_FROM_REGISTRY">
       <RegistrySearch
         Id="SearchInstallDir"
@@ -86,7 +92,7 @@
         Type="raw" />
     </Property>
 
-    <!-- ── Runtime properties ─────────────────────────────────────────────── -->
+    <!-- ==== Runtime properties ==== -->
     <Property Id="WIXUI_INSTALLDIR"       Value="INSTALLDIR" />
     <Property Id="INSTALL_SERVICE"        Value="1" />   <!-- checked by default -->
     <Property Id="AUTOSTART_SERVICE"      Value="1" />
@@ -102,7 +108,7 @@
       Sequence="execute"
       Condition="INSTALLDIR_FROM_REGISTRY" />
 
-    <!-- ── Standard Windows Installer sequences ───────────────────────────── -->
+    <!-- ==== Standard Windows Installer sequences ==== -->
     <InstallExecuteSequence>
       <!-- Stop service before files are removed / replaced -->
       <Custom Action="StopVisionCoreService"   Before="InstallFiles"   Condition="(NOT UPGRADINGPRODUCTCODE) AND (REMOVE~=&quot;ALL&quot;)" />
@@ -116,7 +122,7 @@
       <Custom Action="RemoveVisionCoreService"  Before="RemoveFiles"   Condition="REMOVE~=&quot;ALL&quot; AND (NOT UPGRADINGPRODUCTCODE)" />
     </InstallExecuteSequence>
 
-    <!-- ── Custom actions ─────────────────────────────────────────────────── -->
+    <!-- ==== Custom actions ==== -->
 
     <!-- sc.exe install -->
     <CustomAction
@@ -163,7 +169,7 @@
       Impersonate="no"
       Return="ignore" />
 
-    <!-- ── Firewall: RTSP 8554, REST API 7880, ONVIF 8080 ─────────────────── -->
+    <!-- ==== Firewall: RTSP 8554, REST API 7880, ONVIF 8080 ==== -->
     <fw:FirewallException
       Id="FwRtsp"
       Name="VisionCore RTSP (8554)"
@@ -191,7 +197,7 @@
       IgnoreFailure="yes"
       Condition="ADD_FIREWALL_RULE" />
 
-    <!-- ── Registry ────────────────────────────────────────────────────────── -->
+    <!-- ==== Registry ==== -->
     <ComponentGroup Id="RegistryEntries" Directory="TARGETDIR">
       <Component Id="RegInstallPath" Guid="A3C1D2E4-F5B6-7890-ABCD-EF1234567890">
         <!-- Record install path for upgrade detection -->
@@ -229,7 +235,7 @@
       </Component>
     </ComponentGroup>
 
-    <!-- ── Uninstall shortcut in Programs & Features ───────────────────────── -->
+    <!-- ==== Uninstall shortcut in Programs & Features ==== -->
     <Property Id="ARPPRODUCTICON" Value="VisionCoreIcon" />
     <Property Id="ARPHELPLINK"    Value="https://github.com/your-org/visioncore" />
     <Property Id="ARPURLINFOABOUT" Value="https://github.com/your-org/visioncore" />

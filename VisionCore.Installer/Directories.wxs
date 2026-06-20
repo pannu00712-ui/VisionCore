@@ -5,7 +5,7 @@
   Defines the directory tree and all installed files.
 
   File harvesting
-  ---------------
+  ====
   The two ComponentGroups at the bottom use the WiX 4 HeatWave approach:
   each <Files> element harvests an entire publish folder recursively, so
   you never have to list binaries, DLLs, or PDB files individually.
@@ -16,7 +16,7 @@
       service\   — output of: dotnet publish VisionCore.Service -c Release -r win-x64
 
   Subdirectory note
-  -----------------
+  ====
   mediamtx\ and ffmpeg\ are NOT harvested here — they are downloaded at
   runtime by MediaMtxDownloader / FindFfmpeg().  The installer creates the
   empty directories so the service account has write permission.
@@ -29,7 +29,8 @@
        ══════════════════════════════════════════════════════════════════════ -->
 
   <Fragment>
-    <StandardDirectory Id="ProgramFiles64Folder">
+    <!-- x64: C:\Program Files\VisionCore  |  x86: C:\Program Files (x86)\VisionCore -->
+    <StandardDirectory Id="ProgramFiles64Folder" Condition="$(var.InstallerPlatform)=x64">
       <Directory Id="INSTALLDIR" Name="VisionCore">
 
         <!-- WPF tray application -->
@@ -50,6 +51,17 @@
         <!-- Shared data / config (writable by service account) -->
         <Directory Id="INSTALLDIR_DATA" Name="data" />
 
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramFilesFolder" Condition="$(var.InstallerPlatform)=x86">
+      <Directory Id="INSTALLDIR" Name="VisionCore">
+        <Directory Id="INSTALLDIR_APP"     Name="app" />
+        <Directory Id="INSTALLDIR_SERVICE" Name="service">
+          <Directory Id="INSTALLDIR_MEDIAMTX" Name="mediamtx" />
+          <Directory Id="INSTALLDIR_FFMPEG"   Name="ffmpeg" />
+        </Directory>
+        <Directory Id="INSTALLDIR_DATA" Name="data" />
       </Directory>
     </StandardDirectory>
 
@@ -84,7 +96,7 @@
         Include="$(var.SourceDir)\app\**"
         Exclude="$(var.SourceDir)\app\VisionCore.WPF.exe" />
 
-      <!-- ── Desktop shortcut ─────────────────────────────────────────── -->
+      <!-- ==== Desktop shortcut ==== -->
       <Component Id="DesktopShortcut" Guid="D6F4A5B7-C8E9-0123-DEF0-123456789013"
                  Condition="CREATE_DESKTOP_SHORTCUT">
         <Shortcut
@@ -105,7 +117,7 @@
           KeyPath="yes" />
       </Component>
 
-      <!-- ── Start Menu shortcuts ─────────────────────────────────────── -->
+      <!-- ==== Start Menu shortcuts ==== -->
       <Component Id="StartMenuShortcuts" Guid="E7A5B6C8-D9F0-1234-EF01-234567890124"
                  Condition="CREATE_STARTMENU_SHORTCUT">
         <Shortcut
@@ -170,7 +182,7 @@
         Include="$(var.SourceDir)\service\**"
         Exclude="$(var.SourceDir)\service\VisionCore.Service.exe;$(var.SourceDir)\service\appsettings.json" />
 
-      <!-- ── Empty runtime directories (created now, written at runtime) ── -->
+      <!-- ==== Empty runtime directories (created now, written at runtime) ==== -->
       <Component Id="DirMediaMtx" Guid="B0D8E9F1-A2C3-4567-1234-567890123457">
         <CreateFolder Directory="INSTALLDIR_MEDIAMTX" />
         <!-- Grant NetworkService write permission — the service runs as LocalSystem

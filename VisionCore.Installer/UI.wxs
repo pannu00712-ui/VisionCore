@@ -7,11 +7,11 @@
   install choices.
 
   Dialog flow
-  -----------
-  WelcomeDlg → LicenseAgreementDlg → InstallDirDlg → VcOptionsDlg → VerifyReadyDlg → [install] → ExitDlg
+  ====
+  WelcomeDlg -> LicenseAgreementDlg -> InstallDirDlg -> VcOptionsDlg -> VerifyReadyDlg -> [install] -> ExitDlg
 
   Custom dialog: VcOptionsDlg
-  ---------------------------
+  ====
   Checkboxes exposed to the user:
     ☑ Install as Windows Service        (INSTALL_SERVICE)
     ☑ Start service automatically       (AUTOSTART_SERVICE)
@@ -27,7 +27,7 @@
 
   <Fragment>
 
-    <!-- ── Use the built-in InstallDir dialog sequence as the base ──────── -->
+    <!-- ==== Use the built-in InstallDir dialog sequence as the base ==== -->
     <ui:WixUI Id="WixUI_VisionCore" InstallDirectory="INSTALLDIR">
 
       <!--
@@ -35,7 +35,7 @@
         between InstallDirDlg and VerifyReadyDlg.
       -->
 
-      <!-- From WelcomeDlg → LicenseAgreementDlg (stock) -->
+      <!-- From WelcomeDlg -> LicenseAgreementDlg (stock) -->
       <ui:DialogRef Id="WelcomeDlg" />
       <ui:DialogRef Id="LicenseAgreementDlg" />
       <ui:DialogRef Id="InstallDirDlg" />
@@ -89,7 +89,7 @@
         <Text>Choose which components are installed and started.</Text>
       </ui:Control>
 
-      <!-- ── Windows Service group ─────────────────────────────────── -->
+      <!-- ==== Windows Service group ==== -->
       <ui:Control Id="ServiceGroup"  Type="GroupBox"  X="10"  Y="52"  Width="350" Height="78" Text="Windows Service" />
 
       <ui:Control Id="ChkService"    Type="CheckBox"  X="20"  Y="66"  Width="300" Height="17"
@@ -109,7 +109,7 @@
         <Condition Action="disable">NOT INSTALL_SERVICE</Condition>
       </ui:Control>
 
-      <!-- ── Shortcuts group ───────────────────────────────────────── -->
+      <!-- ==== Shortcuts group ==== -->
       <ui:Control Id="ShortcutsGroup" Type="GroupBox" X="10"  Y="138" Width="350" Height="52" Text="Shortcuts" />
 
       <ui:Control Id="ChkDesktop"    Type="CheckBox"  X="20"  Y="152" Width="300" Height="17"
@@ -121,7 +121,7 @@
         <Text>Create Start Menu shortcuts</Text>
       </ui:Control>
 
-      <!-- ── Bottom bar ────────────────────────────────────────────── -->
+      <!-- ==== Bottom bar ==== -->
       <ui:Control Id="BottomLine"    Type="Line"      X="0"   Y="234" Width="370" Height="0" />
 
       <ui:Control Id="Back"          Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="&amp;Back" />
