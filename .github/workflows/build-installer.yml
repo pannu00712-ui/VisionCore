@@ -46,13 +46,14 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      # ── 4. Install WiX toolset + extensions (MSI only — no Bal/Bundle) ───
+      # ── 4. Install WiX toolset + extensions ──────────────────────────────
       - name: Install WiX
         run: |
           dotnet tool install --global wix --version 4.0.5
           wix extension add WixToolset.UI.wixext       --global
           wix extension add WixToolset.Util.wixext     --global
           wix extension add WixToolset.Firewall.wixext --global
+          wix extension add WixToolset.Bal.wixext      --global
 
       # ── 5. Restore solution ──────────────────────────────────────────────
       - name: Restore NuGet packages
@@ -92,7 +93,7 @@ jobs:
           /p:DebugType=none /p:DebugSymbols=false /p:PublishSingleFile=false
           /p:Version=${{ env.VERSION }}
 
-      # ── 8. Build x64 installer (.msi + .exe) ─────────────────────────────
+      # ── 8. Build x64 installer (.msi) ────────────────────────────────────
       - name: Build x64 installer
         run: >
           dotnet build VisionCore.Installer/VisionCore.Installer.csproj
@@ -102,7 +103,16 @@ jobs:
           /p:ProductVersion=${{ env.VERSION }}
           /p:InstallerPlatform=x64
 
-      # ── 9. Build x86 installer (.msi + .exe) ─────────────────────────────
+      # ── 8b. Build x64 bundle (.exe — depends on the x64 MSI above) ───────
+      - name: Build x64 bundle
+        run: >
+          dotnet build VisionCore.Installer/VisionCore.Bundle.csproj
+          -c Release
+          /p:MsiPath="${{ github.workspace }}\VisionCore.Installer\bin\Release\VisionCore-${{ env.VERSION }}-Setup-x64.msi"
+          /p:OutputName=VisionCore-${{ env.VERSION }}-Setup-x64
+          /p:ProductVersion=${{ env.VERSION }}
+
+      # ── 9. Build x86 installer (.msi) ────────────────────────────────────
       - name: Build x86 installer
         run: >
           dotnet build VisionCore.Installer/VisionCore.Installer.csproj
@@ -111,6 +121,15 @@ jobs:
           /p:OutputName=VisionCore-${{ env.VERSION }}-Setup-x86
           /p:ProductVersion=${{ env.VERSION }}
           /p:InstallerPlatform=x86
+
+      # ── 9b. Build x86 bundle (.exe — depends on the x86 MSI above) ───────
+      - name: Build x86 bundle
+        run: >
+          dotnet build VisionCore.Installer/VisionCore.Bundle.csproj
+          -c Release
+          /p:MsiPath="${{ github.workspace }}\VisionCore.Installer\bin\Release\VisionCore-${{ env.VERSION }}-Setup-x86.msi"
+          /p:OutputName=VisionCore-${{ env.VERSION }}-Setup-x86
+          /p:ProductVersion=${{ env.VERSION }}
 
       # ── 10. Collect installer output files ───────────────────────────────
       - name: Collect installer files

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   VisionCore.Installer — Directories.wxs
-  ========================================
+  ════════════════════════════════════════
   Defines the directory tree and all installed files.
 
   File harvesting
-  ====
+  ═══════════════
   The two ComponentGroups at the bottom use the WiX 4 HeatWave approach:
   each <Files> element harvests an entire publish folder recursively, so
   you never have to list binaries, DLLs, or PDB files individually.
@@ -16,22 +16,30 @@
       service\   — output of: dotnet publish VisionCore.Service -c Release -r win-x64
 
   Subdirectory note
-  ====
+  ══════════════════
   mediamtx\ and ffmpeg\ are NOT harvested here — they are downloaded at
   runtime by MediaMtxDownloader / FindFfmpeg().  The installer creates the
   empty directories so the service account has write permission.
 -->
 
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
-     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util"
+     xmlns:fg="http://www.firegiant.com/schemas/v4/wxs/heatwave/buildtools">
 
   <!-- ══════════════════════════════════════════════════════════════════════
        Directory tree
        ══════════════════════════════════════════════════════════════════════ -->
 
   <Fragment>
-    <!-- x64: C:\Program Files\VisionCore  |  x86: C:\Program Files (x86)\VisionCore -->
-    <StandardDirectory Id="ProgramFiles64Folder" Condition="$(var.InstallerPlatform)=x64">
+    <!--
+      WiX v4 syntax: StandardDirectory does not support a runtime
+      Condition attribute. Platform selection must happen at compile
+      time via the WiX preprocessor (<?if?>), driven by the
+      InstallerPlatform MSBuild property bridged into DefineConstants.
+      x64: C:\Program Files\VisionCore  |  x86: C:\Program Files (x86)\VisionCore
+    -->
+    <?if $(var.InstallerPlatform) = x64 ?>
+    <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="INSTALLDIR" Name="VisionCore">
 
         <!-- WPF tray application -->
@@ -54,8 +62,8 @@
 
       </Directory>
     </StandardDirectory>
-
-    <StandardDirectory Id="ProgramFilesFolder" Condition="$(var.InstallerPlatform)=x86">
+    <?else?>
+    <StandardDirectory Id="ProgramFilesFolder">
       <Directory Id="INSTALLDIR" Name="VisionCore">
         <Directory Id="INSTALLDIR_APP"     Name="app" />
         <Directory Id="INSTALLDIR_SERVICE" Name="service">
@@ -65,6 +73,7 @@
         <Directory Id="INSTALLDIR_DATA" Name="data" />
       </Directory>
     </StandardDirectory>
+    <?endif?>
 
     <!-- Desktop shortcut holder -->
     <StandardDirectory Id="DesktopFolder" />
@@ -93,11 +102,18 @@
       </Component>
 
       <!-- All other app files (DLLs, runtime.json, appsettings, etc.) -->
-      <Files
-        Include="$(var.SourceDir)\app\**"
-        Exclude="$(var.SourceDir)\app\VisionCore.WPF.exe" />
+      <!--
+        The native <Files> wildcard element does not exist until WiX v5;
+        on 4.0.5 use HeatWave's fg:HarvestFolder instead. Each harvested
+        file becomes its own Component automatically.
+      -->
+      <Component Directory="INSTALLDIR_APP">
+        <fg:HarvestFolder Source="$(var.SourceDir)\app\**">
+          <fg:Exclude Files="$(var.SourceDir)\app\VisionCore.WPF.exe" />
+        </fg:HarvestFolder>
+      </Component>
 
-      <!-- ==== Desktop shortcut ==== -->
+      <!-- ── Desktop shortcut ─────────────────────────────────────────── -->
       <Component Id="DesktopShortcut" Guid="D6F4A5B7-C8E9-0123-DEF0-123456789013"
                  Condition="CREATE_DESKTOP_SHORTCUT">
         <Shortcut
@@ -118,7 +134,7 @@
           KeyPath="yes" />
       </Component>
 
-      <!-- ==== Start Menu shortcuts ==== -->
+      <!-- ── Start Menu shortcuts ─────────────────────────────────────── -->
       <Component Id="StartMenuShortcuts" Guid="E7A5B6C8-D9F0-1234-EF01-234567890124"
                  Condition="CREATE_STARTMENU_SHORTCUT">
         <Shortcut
@@ -179,20 +195,23 @@
       </Component>
 
       <!-- All remaining service files (DLLs, runtime.json, etc.) -->
-      <Files
-        Include="$(var.SourceDir)\service\**"
-        Exclude="$(var.SourceDir)\service\VisionCore.Service.exe;$(var.SourceDir)\service\appsettings.json" />
+      <Component Directory="INSTALLDIR_SERVICE">
+        <fg:HarvestFolder Source="$(var.SourceDir)\service\**">
+          <fg:Exclude Files="$(var.SourceDir)\service\VisionCore.Service.exe" />
+          <fg:Exclude Files="$(var.SourceDir)\service\appsettings.json" />
+        </fg:HarvestFolder>
+      </Component>
 
-      <!-- ==== Empty runtime directories (created now, written at runtime) ==== -->
+      <!-- ── Empty runtime directories (created now, written at runtime) ── -->
       <Component Id="DirMediaMtx" Guid="B0D8E9F1-A2C3-4567-1234-567890123457">
-        <CreateFolder Directory="INSTALLDIR_MEDIAMTX" />
         <!-- Grant NetworkService write permission — the service runs as LocalSystem
              by default, but an admin may change it. -->
-        <util:PermissionEx
-          Domain="NT SERVICE"
-          User="VisionCoreService"
-          GenericAll="yes"
-          IgnoreFailure="yes" />
+        <CreateFolder Directory="INSTALLDIR_MEDIAMTX">
+          <util:PermissionEx
+            Domain="NT SERVICE"
+            User="VisionCoreService"
+            GenericAll="yes" />
+        </CreateFolder>
         <RegistryValue
           Root="HKLM"
           Key="SOFTWARE\VisionCore"
@@ -223,18 +242,17 @@
   <Fragment>
     <ComponentGroup Id="DataDir" Directory="INSTALLDIR_DATA">
       <Component Id="DirData" Guid="D2F0A1B3-C4E5-6789-3456-789012345679">
-        <CreateFolder Directory="INSTALLDIR_DATA" />
         <!-- Full control for LocalSystem (service) and Administrators -->
-        <util:PermissionEx
-          Domain="BUILTIN"
-          User="Administrators"
-          GenericAll="yes"
-          IgnoreFailure="yes" />
-        <util:PermissionEx
-          Domain="NT AUTHORITY"
-          User="SYSTEM"
-          GenericAll="yes"
-          IgnoreFailure="yes" />
+        <CreateFolder Directory="INSTALLDIR_DATA">
+          <util:PermissionEx
+            Domain="BUILTIN"
+            User="Administrators"
+            GenericAll="yes" />
+          <util:PermissionEx
+            Domain="NT AUTHORITY"
+            User="SYSTEM"
+            GenericAll="yes" />
+        </CreateFolder>
         <RegistryValue
           Root="HKLM"
           Key="SOFTWARE\VisionCore"

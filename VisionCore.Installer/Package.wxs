@@ -177,8 +177,8 @@
       Each firewall rule gets its own Component referenced by RegistryEntries.
     -->
     <ComponentGroup Id="FirewallRules" Directory="TARGETDIR">
-      <Component Id="FwRtspComponent" Guid="11111111-1111-1111-1111-111111111101">
-        <Condition>ADD_FIREWALL_RULE</Condition>
+      <Component Id="FwRtspComponent" Guid="11111111-1111-1111-1111-111111111101"
+                 Condition="ADD_FIREWALL_RULE">
         <RegistryValue
           Root="HKLM"
           Key="SOFTWARE\VisionCore\Firewall"
@@ -195,8 +195,8 @@
           IgnoreFailure="yes" />
       </Component>
 
-      <Component Id="FwRestApiComponent" Guid="11111111-1111-1111-1111-111111111102">
-        <Condition>ADD_FIREWALL_RULE</Condition>
+      <Component Id="FwRestApiComponent" Guid="11111111-1111-1111-1111-111111111102"
+                 Condition="ADD_FIREWALL_RULE">
         <RegistryValue
           Root="HKLM"
           Key="SOFTWARE\VisionCore\Firewall"
@@ -213,8 +213,8 @@
           IgnoreFailure="yes" />
       </Component>
 
-      <Component Id="FwOnvifComponent" Guid="11111111-1111-1111-1111-111111111103">
-        <Condition>ADD_FIREWALL_RULE</Condition>
+      <Component Id="FwOnvifComponent" Guid="11111111-1111-1111-1111-111111111103"
+                 Condition="ADD_FIREWALL_RULE">
         <RegistryValue
           Root="HKLM"
           Key="SOFTWARE\VisionCore\Firewall"
