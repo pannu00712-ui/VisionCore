@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>VisionCore.Service</RootNamespace>
+    <AssemblyName>VisionCore.Service</AssemblyName>
+    <Version>1.0.0</Version>
+    <OutputType>Exe</OutputType>
+    <WindowsPackageType>None</WindowsPackageType>
+    <SelfContained>false</SelfContained>
+    <Platforms>x64</Platforms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <!-- ── Reference shared Core engine ─────────────────────────────────────── -->
+  <ItemGroup>
+    <ProjectReference Include="..\VisionCore.Core\VisionCore.Core.csproj"/>
+  </ItemGroup>
+
+  <!-- ── Windows Service hosting ──────────────────────────────────────────── -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.0"/>
+  </ItemGroup>
+
+  <!-- ── Logging ───────────────────────────────────────────────────────────── -->
+  <ItemGroup>
+    <PackageReference Include="Serilog"                          Version="3.1.1"/>
+    <PackageReference Include="Serilog.Extensions.Hosting"       Version="8.0.0"/>
+    <PackageReference Include="Serilog.Sinks.File"               Version="5.0.0"/>
+    <PackageReference Include="Serilog.Sinks.EventLog"           Version="3.1.0"/>
+    <PackageReference Include="Serilog.Sinks.Console"            Version="5.0.0"/>
+    <PackageReference Include="Serilog.Settings.Configuration"   Version="8.0.0"/>
+  </ItemGroup>
+
+  <!-- ── Config ────────────────────────────────────────────────────────────── -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json"               Version="8.0.0"/>
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="8.0.0"/>
+    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine"         Version="8.0.0"/>
+  </ItemGroup>
+
+  <!-- ── Embed appsettings ─────────────────────────────────────────────────── -->
+  <!--
+       Microsoft.NET.Sdk.Worker already includes appsettings*.json as
+       implicit Content items (CopyToOutputDirectory = PreserveNewest by
+       default). Using <Content Include> here duplicates that and causes
+       NETSDK1022. Use <Content Update> to just confirm/override the
+       copy behaviour on the items the SDK already picked up.
+  -->
+  <ItemGroup>
+    <Content Update="appsettings.json" CopyToOutputDirectory="PreserveNewest"/>
+    <Content Update="appsettings.*.json" CopyToOutputDirectory="PreserveNewest"/>
+  </ItemGroup>
+
+</Project>

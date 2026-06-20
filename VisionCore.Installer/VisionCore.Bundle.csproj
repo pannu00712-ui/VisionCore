@@ -1,0 +1,62 @@
+<Project Sdk="WixToolset.Sdk/4.0.5">
+
+  <!--
+    ═══════════════════════════════════════════════════════════════════════
+    VisionCore Bundle — WiX 4 Burn bootstrapper project
+    Produces:
+      VisionCore-1.0.0-Setup.exe   (Burn bootstrapper — .NET 8 prereq + MSI)
+
+    This MUST be a separate .wixproj/.csproj from VisionCore.Installer.csproj.
+    A WiX v4 compile graph can only have ONE root-level output element
+    (<Package> or <Bundle>) per project — Bundle.wxs and Package.wxs cannot
+    be compiled together. The bundle's MsiPackage references the .msi that
+    VisionCore.Installer.csproj produces, so this project must build AFTER
+    that one (enforced by the build order in the workflow / build script).
+
+    Build (from solution root, after the MSI is built):
+      dotnet build VisionCore.Installer\VisionCore.Bundle.csproj -c Release ^
+             /p:MsiPath="VisionCore.Installer\bin\Release\VisionCore-1.0.0-Setup-x64.msi" ^
+             /p:OutputName=VisionCore-1.0.0-Setup-x64 ^
+             /p:ProductVersion=1.0.0
+    ═══════════════════════════════════════════════════════════════════════
+  -->
+
+  <PropertyGroup>
+    <ProductName>VisionCore</ProductName>
+    <ProductVersion>1.0.0</ProductVersion>
+    <Manufacturer>VisionCore</Manufacturer>
+    <OutputName Condition="'$(OutputName)'==''">VisionCore-$(ProductVersion)-Setup-x64</OutputName>
+    <!-- Path to the MSI built by VisionCore.Installer.csproj -->
+    <MsiPath Condition="'$(MsiPath)'==''">$(MSBuildThisFileDirectory)bin\Release\VisionCore-$(ProductVersion)-Setup-x64.msi</MsiPath>
+    <Nullable>enable</Nullable>
+    <!--
+      Bridge the MSBuild property MsiPath into a WiX preprocessor
+      variable. Without this, $(var.MsiPath) in Bundle.wxs is undefined.
+    -->
+    <DefineConstants>MsiPath=$(MsiPath)</DefineConstants>
+  </PropertyGroup>
+
+  <!-- ── WiX extensions ─────────────────────────────────────────────────── -->
+  <ItemGroup>
+    <PackageReference Include="WixToolset.Bal.wixext" Version="4.0.5"/>
+    <PackageReference Include="WixToolset.Util.wixext" Version="4.0.5"/>
+  </ItemGroup>
+
+  <!-- ── WiX source files (Bundle only) ───────────────────────────────────── -->
+  <ItemGroup>
+    <Compile Include="Bundle.wxs"/>
+  </ItemGroup>
+
+  <!-- ── Embedded assets ────────────────────────────────────────────────── -->
+  <ItemGroup>
+    <Content Include="License.rtf"          CopyToOutputDirectory="PreserveNewest"/>
+    <Content Include="Assets\setup-icon.ico" CopyToOutputDirectory="PreserveNewest"/>
+  </ItemGroup>
+
+  <!-- ── Pre-build: verify the MSI exists before bundling ─────────────────── -->
+  <Target Name="CheckMsiExists" BeforeTargets="Build">
+    <Warning Condition="!Exists('$(MsiPath)')"
+             Text="MSI not found at $(MsiPath). Build VisionCore.Installer.csproj first."/>
+  </Target>
+
+</Project>

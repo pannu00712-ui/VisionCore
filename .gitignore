@@ -1,0 +1,29 @@
+## ── Build outputs ────────────────────────────────────────────────────────
+bin/
+obj/
+publish/
+artifacts/
+*.user
+
+## ── WiX build output ─────────────────────────────────────────────────────
+VisionCore.Installer/bin/
+VisionCore.Installer/obj/
+
+## ── Visual Studio ────────────────────────────────────────────────────────
+.vs/
+*.suo
+*.userosscache
+*.sln.docstates
+
+## ── Rider / VS Code ──────────────────────────────────────────────────────
+.idea/
+.vscode/
+
+## ── NuGet ─────────────────────────────────────────────────────────────────
+*.nupkg
+**/packages/*
+!**/packages/build/
+
+## ── Logs / temp ───────────────────────────────────────────────────────────
+*.log
+*.tmp
