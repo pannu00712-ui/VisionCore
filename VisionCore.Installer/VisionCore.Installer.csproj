@@ -39,23 +39,23 @@
       undefined — WiX preprocessor variables are NOT auto-populated
       from MSBuild properties of the same name.
 
-      IMPORTANT: WixToolset.Sdk recalculates DefineConstants itself during
-      CoreCompile (folding in Configuration/Platform, etc.), and that
-      recalculation silently wipes out a plain local-property assignment
-      like the one this used to be. A *global* property (set via /p: on
-      the command line) can never be overwritten by the project or its
-      imported targets, so CI now passes SourceDir straight into
-      DefineConstants on the command line:
-        /p:DefineConstants=SourceDir=C:\path\to\publish\x64
-      This fallback only kicks in for local/manual builds where
-      DefineConstants wasn't supplied that way.
-
       NOTE: InstallerPlatform is NOT added here — WixToolset.Sdk already
       auto-promotes it to a WiX preprocessor variable by convention since
       it's declared as an MSBuild property above. Adding it again here
       causes WIX0288 (variable already declared).
     -->
-    <DefineConstants Condition="'$(DefineConstants)'==''">SourceDir=$(SourceDir)</DefineConstants>
+    <DefineConstants>SourceDir=$(SourceDir)</DefineConstants>
+    <!--
+      CRITICAL: WixToolset.Sdk auto-globs every *.wxs file in this folder
+      into Compile items by default. Since Bundle.wxs and Package.wxs now
+      live in the same folder (split across two .csproj files), without
+      this Bundle.wxs would silently get pulled into THIS project too,
+      causing WIX0150 (undefined $(var.MsiPath)) build failures.
+      Turning this off makes the explicit <Compile Include> list below
+      the ONLY source of truth for what gets compiled here.
+    -->
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultItems>false</EnableDefaultItems>
   </PropertyGroup>
 
   <!-- Platform-specific MSI settings -->
