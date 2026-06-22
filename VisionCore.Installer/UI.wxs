@@ -7,7 +7,12 @@
     <ui:WixUI Id="WixUI_VisionCore" InstallDirectory="INSTALLDIR" />
   </Fragment>
 
-  <!-- ── Dialog references ── -->
+  <!-- ── WixVariable must be direct child of Fragment, not inside UI ── -->
+  <Fragment>
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+  </Fragment>
+
+  <!-- ── Dialog references, navigation, and custom dialog ── -->
   <Fragment>
     <UI>
       <DialogRef Id="WelcomeDlg" />
@@ -31,8 +36,6 @@
       <Publish Dialog="VcOptionsDlg"   Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="1" />
       <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="VcOptionsDlg"   Order="3"
                Condition="NOT Installed" />
-
-      <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
 
       <!-- ── Custom VcOptionsDlg ── -->
       <Dialog Id="VcOptionsDlg" Width="370" Height="270" Title="Installation Options">
