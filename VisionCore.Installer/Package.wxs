@@ -111,7 +111,7 @@
     <Icon Id="VisionCoreIcon" SourceFile="$(var.SourceDir)\app\VisionCore.WPF.exe" />
 
     <!-- Reference the UI -->
-    <UIRef Id="WixUI_VisionCore" />
+    <UIRef Id="WixUI_InstallDir" />
 
   </Package>
 

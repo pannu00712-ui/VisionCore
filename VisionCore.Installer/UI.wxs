@@ -2,33 +2,20 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
 
-  <!-- ── Register the custom UI set ── -->
+  <!-- Use the built-in InstallDir dialog set as base -->
   <Fragment>
-    <ui:WixUI Id="WixUI_VisionCore" InstallDirectory="INSTALLDIR" />
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLDIR" />
   </Fragment>
 
-  <!-- ── WixVariable must be direct child of Fragment, not inside UI ── -->
+  <!-- WixVariable must be Fragment direct child -->
   <Fragment>
     <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
   </Fragment>
 
-  <!-- ── Dialog references, navigation, and custom dialog ── -->
+  <!-- Dialog references, navigation wiring, and custom dialog inside UI element -->
   <Fragment>
     <UI>
-      <DialogRef Id="WelcomeDlg" />
-      <DialogRef Id="LicenseAgreementDlg" />
-      <DialogRef Id="InstallDirDlg" />
       <DialogRef Id="VcOptionsDlg" />
-      <DialogRef Id="VerifyReadyDlg" />
-      <DialogRef Id="ExitDlg" />
-      <DialogRef Id="UserExitDlg" />
-      <DialogRef Id="FatalError" />
-      <DialogRef Id="FilesInUse" />
-      <DialogRef Id="MsiRMFilesInUse" />
-      <DialogRef Id="PrepareDlg" />
-      <DialogRef Id="ProgressDlg" />
-      <DialogRef Id="MaintenanceTypeDlg" />
-      <DialogRef Id="MaintenanceWelcomeDlg" />
 
       <!-- Splice VcOptionsDlg between InstallDirDlg and VerifyReadyDlg -->
       <Publish Dialog="InstallDirDlg"  Control="Next" Event="NewDialog" Value="VcOptionsDlg"   Order="3" />
@@ -37,7 +24,7 @@
       <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="VcOptionsDlg"   Order="3"
                Condition="NOT Installed" />
 
-      <!-- ── Custom VcOptionsDlg ── -->
+      <!-- Custom VcOptionsDlg -->
       <Dialog Id="VcOptionsDlg" Width="370" Height="270" Title="Installation Options">
 
         <Control Id="BannerBitmap"   Type="Bitmap"     X="0"   Y="0"   Width="370" Height="44" TabSkip="no" Text="WixUI_Bmp_Banner" />
