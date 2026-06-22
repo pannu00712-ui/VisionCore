@@ -2,39 +2,38 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
 
-  <!-- ── Base UI dialog set ── -->
+  <!-- ── WixUI customization: DialogRef, Publish, WixVariable are children of ui:WixUI ── -->
   <Fragment>
-    <ui:WixUI Id="WixUI_VisionCore" InstallDirectory="INSTALLDIR" />
+    <ui:WixUI Id="WixUI_VisionCore" InstallDirectory="INSTALLDIR">
+
+      <ui:DialogRef Id="WelcomeDlg" />
+      <ui:DialogRef Id="LicenseAgreementDlg" />
+      <ui:DialogRef Id="InstallDirDlg" />
+      <ui:DialogRef Id="VcOptionsDlg" />
+      <ui:DialogRef Id="VerifyReadyDlg" />
+      <ui:DialogRef Id="ExitDlg" />
+      <ui:DialogRef Id="UserExitDlg" />
+      <ui:DialogRef Id="FatalError" />
+      <ui:DialogRef Id="FilesInUse" />
+      <ui:DialogRef Id="MsiRMFilesInUse" />
+      <ui:DialogRef Id="PrepareDlg" />
+      <ui:DialogRef Id="ProgressDlg" />
+      <ui:DialogRef Id="MaintenanceTypeDlg" />
+      <ui:DialogRef Id="MaintenanceWelcomeDlg" />
+
+      <!-- Splice VcOptionsDlg between InstallDirDlg and VerifyReadyDlg -->
+      <ui:Publish Dialog="InstallDirDlg"  Control="Next" Event="NewDialog" Value="VcOptionsDlg"   Order="3" />
+      <ui:Publish Dialog="VcOptionsDlg"   Control="Back" Event="NewDialog" Value="InstallDirDlg"  Order="1" />
+      <ui:Publish Dialog="VcOptionsDlg"   Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="1" />
+      <ui:Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="VcOptionsDlg"   Order="3"
+                  Condition="NOT Installed" />
+
+      <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+
+    </ui:WixUI>
   </Fragment>
 
-  <!-- ── Dialog references and navigation wiring ── -->
-  <Fragment>
-    <DialogRef Id="WelcomeDlg" />
-    <DialogRef Id="LicenseAgreementDlg" />
-    <DialogRef Id="InstallDirDlg" />
-    <DialogRef Id="VcOptionsDlg" />
-    <DialogRef Id="VerifyReadyDlg" />
-    <DialogRef Id="ExitDlg" />
-    <DialogRef Id="UserExitDlg" />
-    <DialogRef Id="FatalError" />
-    <DialogRef Id="FilesInUse" />
-    <DialogRef Id="MsiRMFilesInUse" />
-    <DialogRef Id="PrepareDlg" />
-    <DialogRef Id="ProgressDlg" />
-    <DialogRef Id="MaintenanceTypeDlg" />
-    <DialogRef Id="MaintenanceWelcomeDlg" />
-
-    <!-- Splice VcOptionsDlg between InstallDirDlg and VerifyReadyDlg -->
-    <Publish Dialog="InstallDirDlg"  Control="Next"  Event="NewDialog" Value="VcOptionsDlg"   Order="3" />
-    <Publish Dialog="VcOptionsDlg"   Control="Back"  Event="NewDialog" Value="InstallDirDlg"  Order="1" />
-    <Publish Dialog="VcOptionsDlg"   Control="Next"  Event="NewDialog" Value="VerifyReadyDlg" Order="1" />
-    <Publish Dialog="VerifyReadyDlg" Control="Back"  Event="NewDialog" Value="VcOptionsDlg"   Order="3"
-             Condition="NOT Installed" />
-
-    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
-  </Fragment>
-
-  <!-- ── Custom VcOptionsDlg dialog ── -->
+  <!-- ── Custom VcOptionsDlg dialog in its own Fragment ── -->
   <Fragment>
     <ui:Dialog Id="VcOptionsDlg" Width="370" Height="270" Title="Installation Options">
 
@@ -50,7 +49,6 @@
 
       <!-- Windows Service group -->
       <Control Id="ServiceGroup"   Type="GroupBox"   X="10"  Y="52"  Width="350" Height="78" Text="Windows Service" />
-
       <Control Id="ChkService"     Type="CheckBox"   X="20"  Y="66"  Width="300" Height="17"
                Property="INSTALL_SERVICE" CheckBoxValue="1">
         <Text Value="Install VisionCore as a Windows Service (VisionCoreService)" />
@@ -66,7 +64,6 @@
 
       <!-- Shortcuts group -->
       <Control Id="ShortcutsGroup" Type="GroupBox"   X="10"  Y="138" Width="350" Height="52" Text="Shortcuts" />
-
       <Control Id="ChkDesktop"     Type="CheckBox"   X="20"  Y="152" Width="300" Height="17"
                Property="CREATE_DESKTOP_SHORTCUT" CheckBoxValue="1">
         <Text Value="Create a desktop shortcut" />
@@ -78,7 +75,6 @@
 
       <!-- Bottom bar -->
       <Control Id="BottomLine"     Type="Line"       X="0"   Y="234" Width="370" Height="0" />
-
       <Control Id="Back"           Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="&amp;Back" />
       <Control Id="Next"           Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="&amp;Next" />
       <Control Id="Cancel"         Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
