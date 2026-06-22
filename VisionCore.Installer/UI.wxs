@@ -2,73 +2,8 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
 
-  <!-- Use the built-in InstallDir dialog set as base -->
-  <Fragment>
-    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLDIR" />
-  </Fragment>
-
-  <!-- WixVariable must be Fragment direct child -->
   <Fragment>
     <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
-  </Fragment>
-
-  <!-- Dialog references, navigation wiring, and custom dialog inside UI element -->
-  <Fragment>
-    <UI>
-      <DialogRef Id="VcOptionsDlg" />
-
-      <!-- Splice VcOptionsDlg between InstallDirDlg and VerifyReadyDlg -->
-      <Publish Dialog="InstallDirDlg"  Control="Next" Event="NewDialog" Value="VcOptionsDlg"   Order="3" />
-      <Publish Dialog="VcOptionsDlg"   Control="Back" Event="NewDialog" Value="InstallDirDlg"  Order="1" />
-      <Publish Dialog="VcOptionsDlg"   Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="1" />
-      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="VcOptionsDlg"   Order="3"
-               Condition="NOT Installed" />
-
-      <!-- Custom VcOptionsDlg -->
-      <Dialog Id="VcOptionsDlg" Width="370" Height="270" Title="Installation Options">
-
-        <Control Id="BannerBitmap"   Type="Bitmap"     X="0"   Y="0"   Width="370" Height="44" TabSkip="no" Text="WixUI_Bmp_Banner" />
-        <Control Id="BannerLine"     Type="Line"       X="0"   Y="44"  Width="370" Height="0" />
-        <Control Id="Title"          Type="Text"       X="15"  Y="8"   Width="200" Height="17" Transparent="yes" NoPrefix="yes">
-          <Text Value="{\WixUI_Font_Title}Installation Options" />
-        </Control>
-        <Control Id="Description"    Type="Text"       X="25"  Y="23"  Width="280" Height="17" Transparent="yes" NoPrefix="yes">
-          <Text Value="Choose which components are installed and started." />
-        </Control>
-
-        <Control Id="ServiceGroup"   Type="GroupBox"   X="10"  Y="52"  Width="350" Height="78" Text="Windows Service" />
-        <Control Id="ChkService"     Type="CheckBox"   X="20"  Y="66"  Width="300" Height="17"
-                 Property="INSTALL_SERVICE" CheckBoxValue="1">
-          <Text Value="Install VisionCore as a Windows Service (VisionCoreService)" />
-        </Control>
-        <Control Id="ChkAutoStart"   Type="CheckBox"   X="30"  Y="83"  Width="290" Height="17"
-                 Property="AUTOSTART_SERVICE" CheckBoxValue="1">
-          <Text Value="Start the service automatically after install" />
-        </Control>
-        <Control Id="ChkFirewall"    Type="CheckBox"   X="30"  Y="100" Width="290" Height="17"
-                 Property="ADD_FIREWALL_RULE" CheckBoxValue="1">
-          <Text Value="Add Windows Firewall rules (RTSP 8554, REST 7880, ONVIF 8080)" />
-        </Control>
-
-        <Control Id="ShortcutsGroup" Type="GroupBox"   X="10"  Y="138" Width="350" Height="52" Text="Shortcuts" />
-        <Control Id="ChkDesktop"     Type="CheckBox"   X="20"  Y="152" Width="300" Height="17"
-                 Property="CREATE_DESKTOP_SHORTCUT" CheckBoxValue="1">
-          <Text Value="Create a desktop shortcut" />
-        </Control>
-        <Control Id="ChkStartMenu"   Type="CheckBox"   X="20"  Y="169" Width="300" Height="17"
-                 Property="CREATE_STARTMENU_SHORTCUT" CheckBoxValue="1">
-          <Text Value="Create Start Menu shortcuts" />
-        </Control>
-
-        <Control Id="BottomLine"     Type="Line"       X="0"   Y="234" Width="370" Height="0" />
-        <Control Id="Back"           Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="&amp;Back" />
-        <Control Id="Next"           Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="&amp;Next" />
-        <Control Id="Cancel"         Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
-          <Publish Event="SpawnDialog" Value="CancelDlg" />
-        </Control>
-
-      </Dialog>
-    </UI>
   </Fragment>
 
 </Wix>
