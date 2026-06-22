@@ -49,6 +49,7 @@
 
         <ComponentGroupRef Id="AppFiles" />
         <ComponentGroupRef Id="RegistryEntries" />
+        <ComponentGroupRef Id="StartMenuDirCleanup" />
 
       </Feature>
 
