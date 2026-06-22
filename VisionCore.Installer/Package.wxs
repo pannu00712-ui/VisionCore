@@ -32,7 +32,6 @@
     <Launch Condition="DOTNET8_DESKTOP_INSTALLED"
       Message="VisionCore requires .NET 8 Windows Desktop Runtime. Please install it from https://dotnet.microsoft.com/download/dotnet/8.0 and run Setup again." />
 
-    <Property Id="WIXUI_INSTALLDIR"          Value="INSTALLDIR" />
     <Property Id="INSTALL_SERVICE"           Value="1" />
     <Property Id="AUTOSTART_SERVICE"         Value="1" />
     <Property Id="ADD_FIREWALL_RULE"         Value="1" />
