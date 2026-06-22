@@ -191,7 +191,8 @@
           Name="VisionCore RTSP (8554)"
           Port="8554"
           Protocol="tcp"
-          Scope="any" />
+          Scope="any"
+          IgnoreFailure="yes" />
       </Component>
 
       <Component Id="FwRestApiComponent" Guid="11111111-1111-1111-1111-111111111102"
@@ -208,7 +209,8 @@
           Name="VisionCore REST API (7880)"
           Port="7880"
           Protocol="tcp"
-          Scope="localSubnet" />
+          Scope="localSubnet"
+          IgnoreFailure="yes" />
       </Component>
 
       <Component Id="FwOnvifComponent" Guid="11111111-1111-1111-1111-111111111103"
@@ -225,7 +227,8 @@
           Name="VisionCore ONVIF (8080)"
           Port="8080"
           Protocol="tcp"
-          Scope="any" />
+          Scope="any"
+          IgnoreFailure="yes" />
       </Component>
     </ComponentGroup>
 

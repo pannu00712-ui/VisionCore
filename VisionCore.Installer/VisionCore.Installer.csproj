@@ -45,6 +45,17 @@
       causes WIX0288 (variable already declared).
     -->
     <DefineConstants>SourceDir=$(SourceDir)</DefineConstants>
+    <!--
+      CRITICAL: WixToolset.Sdk auto-globs every *.wxs file in this folder
+      into Compile items by default. Since Bundle.wxs and Package.wxs now
+      live in the same folder (split across two .csproj files), without
+      this Bundle.wxs would silently get pulled into THIS project too,
+      causing WIX0150 (undefined $(var.MsiPath)) build failures.
+      Turning this off makes the explicit <Compile Include> list below
+      the ONLY source of truth for what gets compiled here.
+    -->
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultItems>false</EnableDefaultItems>
   </PropertyGroup>
 
   <!-- Platform-specific MSI settings -->
@@ -73,18 +84,6 @@
   </ItemGroup>
 
   <!-- ── WiX source files (MSI only — Bundle.wxs is built separately) ────── -->
-  <!--
-    WixToolset.Sdk auto-includes every .wxs file in the project folder by
-    default (EnableDefaultCompileItems=true), regardless of the explicit
-    <Compile Include> entries below. Bundle.wxs lives in this same folder
-    (so VisionCore.Bundle.csproj can find it too) but must NOT be compiled
-    into this MSI project — it defines a separate root-level <Bundle>
-    output that cannot coexist with <Package> in one compile. Explicitly
-    removing it here prevents it from being silently auto-included.
-  -->
-  <ItemGroup>
-    <Compile Remove="Bundle.wxs"/>
-  </ItemGroup>
   <ItemGroup>
     <Compile Include="Package.wxs"/>
     <Compile Include="Directories.wxs"/>
