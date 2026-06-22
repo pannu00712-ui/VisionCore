@@ -108,9 +108,9 @@ jobs:
         run: >
           dotnet build VisionCore.Installer/VisionCore.Bundle.csproj
           -c Release
-          /p:MsiPath="${{ github.workspace }}\VisionCore.Installer\bin\Release\VisionCore-${{ env.VERSION }}-Setup-x64.msi"
           /p:OutputName=VisionCore-${{ env.VERSION }}-Setup-x64
           /p:ProductVersion=${{ env.VERSION }}
+          "/p:WixVariables=MsiPath=${{ github.workspace }}\VisionCore.Installer\bin\Release\VisionCore-${{ env.VERSION }}-Setup-x64.msi"
 
       # ── 9. Build x86 installer (.msi) ────────────────────────────────────
       - name: Build x86 installer
@@ -127,9 +127,9 @@ jobs:
         run: >
           dotnet build VisionCore.Installer/VisionCore.Bundle.csproj
           -c Release
-          /p:MsiPath="${{ github.workspace }}\VisionCore.Installer\bin\Release\VisionCore-${{ env.VERSION }}-Setup-x86.msi"
           /p:OutputName=VisionCore-${{ env.VERSION }}-Setup-x86
           /p:ProductVersion=${{ env.VERSION }}
+          "/p:WixVariables=MsiPath=${{ github.workspace }}\VisionCore.Installer\bin\Release\VisionCore-${{ env.VERSION }}-Setup-x86.msi"
 
       # ── 10. Collect installer output files ───────────────────────────────
       - name: Collect installer files
