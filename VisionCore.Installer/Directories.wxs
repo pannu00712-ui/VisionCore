@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!==
+<!--
   VisionCore.Installer — Directories.wxs
   ========================================
   Defines the directory tree and all installed files.
@@ -37,7 +37,7 @@
 
         <!-- Headless Windows Service -->
         <Directory Id="INSTALLDIR_SERVICE" Name="service">
-          <!==
+          <!--
             These subdirectories are created empty by the installer.
             MediaMtxDownloader writes mediamtx.exe into mediamtx\ at runtime.
             The user (or IT admin) drops ffmpeg.exe into ffmpeg\ if they want
