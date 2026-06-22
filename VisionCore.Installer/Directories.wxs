@@ -54,6 +54,14 @@
           Name="Desktop" Type="integer" Value="1" KeyPath="yes" />
       </Component>
 
+      <!-- Start Menu folder cleanup - UNCONDITIONAL component required for ICE64 -->
+      <Component Id="StartMenuFolderCleanup" Guid="A1B2C3D4-E5F6-7890-ABCD-EF1234567800">
+        <RegistryValue Root="HKCU" Key="SOFTWARE\VisionCore\Shortcuts"
+          Name="StartMenuFolder" Type="integer" Value="1" KeyPath="yes" />
+        <RemoveFolder Id="RemoveStartMenuVisionCore" Directory="STARTMENU_VISIONCORE" On="uninstall" />
+        <RemoveFolder Id="RemoveProgramMenuFolder"   Directory="ProgramMenuFolder"    On="uninstall" />
+      </Component>
+
       <!-- Start Menu shortcuts -->
       <Component Id="StartMenuShortcuts" Guid="E7A5B6C8-D9F0-1234-EF01-234567890124"
                  Condition="CREATE_STARTMENU_SHORTCUT">
@@ -64,9 +72,6 @@
         <Shortcut Id="StartMenuShortcutUninstall" Directory="STARTMENU_VISIONCORE"
           Name="Uninstall VisionCore"
           Target="[SystemFolder]msiexec.exe" Arguments="/x [ProductCode]" />
-        <!-- ICE64 fix: RemoveFolder for STARTMENU_VISIONCORE required -->
-        <RemoveFolder Id="RemoveStartMenuFolder"  Directory="STARTMENU_VISIONCORE" On="uninstall" />
-        <RemoveFolder Id="RemoveProgramMenuFolder" Directory="ProgramMenuFolder"   On="uninstall" />
         <RegistryValue Root="HKCU" Key="SOFTWARE\VisionCore\Shortcuts"
           Name="StartMenu" Type="integer" Value="1" KeyPath="yes" />
       </Component>
