@@ -64,7 +64,9 @@
         <Shortcut Id="StartMenuShortcutUninstall" Directory="STARTMENU_VISIONCORE"
           Name="Uninstall VisionCore"
           Target="[SystemFolder]msiexec.exe" Arguments="/x [ProductCode]" />
-        <RemoveFolder Id="RemoveStartMenuFolder" Directory="STARTMENU_VISIONCORE" On="uninstall" />
+        <!-- ICE64 fix: RemoveFolder for STARTMENU_VISIONCORE required -->
+        <RemoveFolder Id="RemoveStartMenuFolder"  Directory="STARTMENU_VISIONCORE" On="uninstall" />
+        <RemoveFolder Id="RemoveProgramMenuFolder" Directory="ProgramMenuFolder"   On="uninstall" />
         <RegistryValue Root="HKCU" Key="SOFTWARE\VisionCore\Shortcuts"
           Name="StartMenu" Type="integer" Value="1" KeyPath="yes" />
       </Component>
@@ -101,8 +103,8 @@
     <ComponentGroup Id="DataDir" Directory="INSTALLDIR_DATA">
       <Component Id="DirData" Guid="D2F0A1B3-C4E5-6789-3456-789012345679">
         <CreateFolder Directory="INSTALLDIR_DATA">
-          <util:PermissionEx Domain="BUILTIN" User="Administrators" GenericAll="yes" />
-          <util:PermissionEx Domain="NT AUTHORITY" User="SYSTEM" GenericAll="yes" />
+          <util:PermissionEx Domain="BUILTIN"      User="Administrators" GenericAll="yes" />
+          <util:PermissionEx Domain="NT AUTHORITY" User="SYSTEM"         GenericAll="yes" />
         </CreateFolder>
         <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="DataDir"
           Type="string" Value="[INSTALLDIR_DATA]" KeyPath="yes" />
