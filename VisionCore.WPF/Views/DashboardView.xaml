@@ -1,0 +1,404 @@
+<UserControl x:Class="VisionCore.WPF.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:VisionCore.WPF.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:DashboardViewModel, IsDesignTimeCreatable=False}"
+             Background="{StaticResource Brush.Background}"
+             FontFamily="{StaticResource Font.Body}"
+             FontSize="{StaticResource FontSize.MD}">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>   <!-- toolbar -->
+            <RowDefinition Height="Auto"/>   <!-- stat tiles -->
+            <RowDefinition Height="*"/>      <!-- camera grid -->
+        </Grid.RowDefinitions>
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             TOOLBAR
+        ═══════════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="0"
+                Background="{StaticResource Brush.Surface}"
+                BorderBrush="{StaticResource Brush.Border}"
+                BorderThickness="0,0,0,1"
+                Padding="20,10">
+            <Grid>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Dashboard"
+                               Style="{StaticResource Text.Heading}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center">
+
+                    <!-- Camera CRUD -->
+                    <Button Content="＋  Add Camera"
+                            Style="{StaticResource Btn.Primary}"
+                            Command="{Binding AddCameraCommand}"
+                            MinWidth="110"
+                            Margin="0,0,4,0"
+                            ToolTip="Add a new virtual camera"/>
+
+                    <Button Content="✎  Edit"
+                            Style="{StaticResource Btn.Secondary}"
+                            Command="{Binding EditCameraCommand}"
+                            MinWidth="70"
+                            Margin="0,0,4,0"
+                            ToolTip="Edit selected camera"/>
+
+                    <Button Content="🗑  Delete"
+                            Style="{StaticResource Btn.Ghost}"
+                            Command="{Binding DeleteCameraCommand}"
+                            MinWidth="76"
+                            Margin="0,0,16,0"
+                            ToolTip="Delete selected camera"/>
+
+                    <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"
+                               Margin="0,0,16,0"
+                               VerticalAlignment="Stretch"/>
+
+                    <!-- Per-camera controls -->
+                    <Button Content="▶  Start"
+                            Style="{StaticResource Btn.Primary}"
+                            Command="{Binding StartCommand}"
+                            MinWidth="88"
+                            Margin="0,0,6,0"
+                            ToolTip="Start selected camera"/>
+
+                    <Button Content="■  Stop"
+                            Style="{StaticResource Btn.Secondary}"
+                            Command="{Binding StopCommand}"
+                            MinWidth="80"
+                            Margin="0,0,12,0"
+                            ToolTip="Stop selected camera"/>
+
+                    <!-- Bulk controls -->
+                    <Button Content="Start all"
+                            Style="{StaticResource Btn.Ghost}"
+                            Command="{Binding StartAllCommand}"
+                            Margin="0,0,6,0"/>
+
+                    <Button Content="Stop all"
+                            Style="{StaticResource Btn.Ghost}"
+                            Command="{Binding StopAllCommand}"
+                            Margin="0,0,12,0"/>
+
+                    <!-- Copy URL -->
+                    <Button Content="⎘  Copy URL"
+                            Style="{StaticResource Btn.Ghost}"
+                            Command="{Binding CopyUrlCommand}"
+                            Margin="0,0,6,0"
+                            ToolTip="Copy RTSP URL of selected camera"/>
+
+                    <!-- Refresh -->
+                    <Button Content="↺"
+                            Style="{StaticResource Btn.Ghost}"
+                            Command="{Binding RefreshCommand}"
+                            Width="32"
+                            ToolTip="Reload camera list"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             STAT TILES
+        ═══════════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="1"
+                Background="{StaticResource Brush.Surface}"
+                BorderBrush="{StaticResource Brush.Border}"
+                BorderThickness="0,0,0,1"
+                Padding="20,10">
+            <StackPanel Orientation="Horizontal">
+
+                <Border Style="{StaticResource StatTile}" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="CAMERAS"
+                                   Style="{StaticResource Text.SectionHeader}"
+                                   Margin="0,0,0,2"/>
+                        <TextBlock FontSize="{StaticResource FontSize.2XL}"
+                                   FontWeight="SemiBold">
+                            <Run Text="{Binding ActiveCameras, Mode=OneWay}"/>
+                            <Run Text=" / " Foreground="{StaticResource Brush.Text.Disabled}"/>
+                            <Run Text="{Binding TotalCameras, Mode=OneWay}"
+                                 Foreground="{StaticResource Brush.Text.Disabled}"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource StatTile}" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="CLIENTS"
+                                   Style="{StaticResource Text.SectionHeader}"
+                                   Margin="0,0,0,2"/>
+                        <TextBlock Text="{Binding TotalClients, Mode=OneWay}"
+                                   FontSize="{StaticResource FontSize.2XL}"
+                                   FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource StatTile}" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="TOTAL BITRATE"
+                                   Style="{StaticResource Text.SectionHeader}"
+                                   Margin="0,0,0,2"/>
+                        <TextBlock FontSize="{StaticResource FontSize.2XL}"
+                                   FontWeight="SemiBold">
+                            <Run Text="{Binding TotalBitrateKbps, Mode=OneWay, StringFormat='{}{0:N0}'}"/>
+                            <Run Text=" kbps" Foreground="{StaticResource Brush.Text.Disabled}"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource StatTile}" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="UPTIME"
+                                   Style="{StaticResource Text.SectionHeader}"
+                                   Margin="0,0,0,2"/>
+                        <TextBlock Text="{Binding AppUptime, Mode=OneWay}"
+                                   FontSize="{StaticResource FontSize.2XL}"
+                                   FontWeight="SemiBold"
+                                   FontFamily="{StaticResource Font.Mono}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Service status indicators -->
+                <Border Style="{StaticResource StatTile}">
+                    <StackPanel>
+                        <TextBlock Text="SERVICES"
+                                   Style="{StaticResource Text.SectionHeader}"
+                                   Margin="0,0,0,6"/>
+
+                        <!-- RTSP -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Border Width="8" Height="8" CornerRadius="4"
+                                    VerticalAlignment="Center" Margin="0,0,6,0">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{StaticResource Brush.Success}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding RtspServerOnline}" Value="False">
+                                                <Setter Property="Background" Value="{StaticResource Brush.Danger}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                            </Border>
+                            <TextBlock Text="RTSP" Style="{StaticResource Text.Secondary}"/>
+                        </StackPanel>
+
+                        <!-- REST API -->
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="8" Height="8" CornerRadius="4"
+                                    VerticalAlignment="Center" Margin="0,0,6,0">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{StaticResource Brush.Success}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding RestApiOnline}" Value="False">
+                                                <Setter Property="Background" Value="{StaticResource Brush.Danger}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                            </Border>
+                            <TextBlock Text="REST API" Style="{StaticResource Text.Secondary}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </Border>
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             CAMERA GRID
+        ═══════════════════════════════════════════════════════════════════ -->
+        <DataGrid Grid.Row="2"
+                  ItemsSource="{Binding Cameras}"
+                  MouseDoubleClick="DataGrid_MouseDoubleClick"
+                  SelectedItem="{Binding Selected}"
+                  SelectionMode="Single"
+                  IsReadOnly="True"
+                  Margin="20,16">
+
+            <!-- Empty state -->
+            <DataGrid.Style>
+                <Style TargetType="DataGrid" BasedOn="{StaticResource {x:Type DataGrid}}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Cameras.Count}" Value="0">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate>
+                                        <Border Background="{StaticResource Brush.Background}">
+                                            <StackPanel HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center">
+                                                <TextBlock Text="📹"
+                                                           FontSize="48"
+                                                           HorizontalAlignment="Center"
+                                                           Margin="0,0,0,12"/>
+                                                <TextBlock Text="No cameras configured."
+                                                           Style="{StaticResource Text.Secondary}"
+                                                           HorizontalAlignment="Center"
+                                                           Margin="0,0,0,6"/>
+                                                <TextBlock Text="Go to Settings → Cameras to add one."
+                                                           Style="{StaticResource Text.Secondary}"
+                                                           HorizontalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.Style>
+
+            <DataGrid.Columns>
+
+                <!-- Status dot -->
+                <DataGridTemplateColumn Header="" Width="28" CanUserResize="False">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Ellipse Width="8" Height="8"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="{StaticResource Brush.Text.Disabled}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                                <Setter Property="Fill" Value="{StaticResource Brush.Success}"/>
+                                            </DataTrigger>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsRunning}" Value="True"/>
+                                                    <Condition Binding="{Binding IsHealthy}" Value="False"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Fill" Value="{StaticResource Brush.Warning}"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Name -->
+                <DataGridTextColumn Header="Camera"
+                                    Binding="{Binding Name}"
+                                    Width="180"
+                                    FontWeight="SemiBold"/>
+
+                <!-- Status text -->
+                <DataGridTextColumn Header="Status"
+                                    Binding="{Binding StatusText}"
+                                    Width="140"/>
+
+                <!-- Bitrate -->
+                <DataGridTemplateColumn Header="Bitrate" Width="100">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock FontFamily="{StaticResource Font.Mono}"
+                                       FontSize="{StaticResource FontSize.SM}">
+                                <Run Text="{Binding Bitrate, Mode=OneWay, StringFormat='{}{0:N0}'}"/>
+                                <Run Text=" kbps" Foreground="{StaticResource Brush.Text.Disabled}"/>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- FPS -->
+                <DataGridTemplateColumn Header="FPS" Width="65">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Fps, Mode=OneWay, StringFormat='{}{0:N1}'}"
+                                       FontFamily="{StaticResource Font.Mono}"
+                                       FontSize="{StaticResource FontSize.SM}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Clients -->
+                <DataGridTextColumn Header="Clients"
+                                    Binding="{Binding Clients}"
+                                    Width="65"/>
+
+                <!-- GPU encoder -->
+                <DataGridTextColumn Header="Encoder"
+                                    Binding="{Binding GpuEncoder}"
+                                    Width="110"/>
+
+                <!-- CPU % -->
+                <DataGridTemplateColumn Header="CPU" Width="65">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock FontFamily="{StaticResource Font.Mono}"
+                                       FontSize="{StaticResource FontSize.SM}">
+                                <Run Text="{Binding CpuUsage, Mode=OneWay, StringFormat='{}{0:N1}'}"/>
+                                <Run Text="%" Foreground="{StaticResource Brush.Text.Disabled}"/>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Uptime -->
+                <DataGridTextColumn Header="Uptime"
+                                    Binding="{Binding Uptime}"
+                                    Width="85"
+                                    FontFamily="{StaticResource Font.Mono}"/>
+
+                <!-- Motion indicator -->
+                <DataGridTemplateColumn Header="Motion" Width="65">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Border HorizontalAlignment="Center"
+                                    VerticalAlignment="Center">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Hidden"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding MotionDetected}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Border Style="{StaticResource Badge.Warning}">
+                                    <TextBlock Text="●"
+                                               Foreground="{StaticResource Brush.Warning}"
+                                               FontSize="{StaticResource FontSize.XS}"
+                                               FontWeight="Bold"/>
+                                </Border>
+                            </Border>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- RTSP URL -->
+                <DataGridTemplateColumn Header="RTSP URL" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding RtspUrl}"
+                                       FontFamily="{StaticResource Font.Mono}"
+                                       FontSize="{StaticResource FontSize.SM}"
+                                       Foreground="{StaticResource Brush.Text.Secondary}"
+                                       TextTrimming="CharacterEllipsis"
+                                       ToolTip="{Binding RtspUrl}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+            </DataGrid.Columns>
+        </DataGrid>
+
+    </Grid>
+</UserControl>

@@ -1,0 +1,73 @@
+<Window x:Class="VisionCore.WPF.Views.UpdateDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Update Available"
+        Width="480" Height="340"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="{StaticResource Brush.Background}">
+
+    <Grid Margin="28">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0"
+                   Text="A new version of VisionCore is available"
+                   Style="{StaticResource Text.Heading}"
+                   Margin="0,0,0,8"/>
+
+        <!-- Version info -->
+        <TextBlock Grid.Row="1" Margin="0,0,0,12">
+            <Run Text="{Binding CurrentVersion, Mode=OneWay}" Foreground="{StaticResource Brush.Text.Secondary}"/>
+            <Run Text=" → " Foreground="{StaticResource Brush.Text.Secondary}"/>
+            <Run Text="{Binding NewVersion, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource Brush.Accent}"/>
+        </TextBlock>
+
+        <!-- Release notes -->
+        <Border Grid.Row="2"
+                Style="{StaticResource Card.Flat}"
+                Margin="0,0,0,16">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <TextBlock Text="{Binding ReleaseNotes}"
+                           Style="{StaticResource Text.Secondary}"
+                           TextWrapping="Wrap"/>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Progress -->
+        <StackPanel Grid.Row="3" Margin="0,0,0,16"
+                    Visibility="{Binding IsDownloading, Converter={StaticResource BoolToVis}}">
+            <ProgressBar Value="{Binding ProgressPct}" Maximum="100" Margin="0,0,0,4"/>
+            <TextBlock Text="{Binding ProgressMessage}" Style="{StaticResource Text.Secondary}"/>
+        </StackPanel>
+
+        <!-- Error -->
+        <TextBlock Grid.Row="3"
+                   Text="{Binding ErrorMessage}"
+                   Style="{StaticResource Text.Error}"
+                   Margin="0,0,0,16"
+                   TextWrapping="Wrap"
+                   Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}"/>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Remind me later"
+                    Style="{StaticResource Btn.Ghost}"
+                    Command="{Binding SnoozeCommand}"
+                    Margin="0,0,8,0"
+                    Visibility="{Binding CanSnooze, Converter={StaticResource BoolToVis}}"/>
+            <Button Content="Install now"
+                    Style="{StaticResource Btn.Primary}"
+                    Command="{Binding InstallCommand}"
+                    MinWidth="120"/>
+        </StackPanel>
+    </Grid>
+
+</Window>

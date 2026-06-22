@@ -1,0 +1,77 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <!-- WinForms needed for NotifyIcon (system tray) -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>VisionCore.WPF</RootNamespace>
+    <AssemblyName>VisionCore.WPF</AssemblyName>
+    <Version>1.0.0</Version>
+    <Authors>VisionCore</Authors>
+    <Description>WPF tray application — dashboard, settings, and camera management UI</Description>
+    <ApplicationIcon>Assets\tray.ico</ApplicationIcon>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Platforms>AnyCPU;x64</Platforms>
+    <!-- Single-file publish for release -->
+    <PublishSingleFile Condition="'$(Configuration)'=='Release'">true</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+    <!-- Embed the assembly version so App.xaml.cs can read it -->
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <!-- ── Core engine (RTSP, ONVIF, REST, cameras, update pipeline) ───── -->
+  <ItemGroup>
+    <ProjectReference Include="..\VisionCore.Core\VisionCore.Core.csproj"/>
+  </ItemGroup>
+
+  <!-- ── Hosting / DI ──────────────────────────────────────────────────── -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting"              Version="8.0.0"/>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection"  Version="8.0.0"/>
+  </ItemGroup>
+
+  <!-- ── Logging (Serilog) ─────────────────────────────────────────────── -->
+  <ItemGroup>
+    <PackageReference Include="Serilog"                          Version="3.1.1"/>
+    <PackageReference Include="Serilog.Extensions.Hosting"       Version="8.0.0"/>
+    <PackageReference Include="Serilog.Sinks.File"               Version="5.0.0"/>
+    <PackageReference Include="Serilog.Sinks.Debug"              Version="2.0.0"/>
+    <PackageReference Include="Serilog.Settings.Configuration"   Version="8.0.0"/>
+  </ItemGroup>
+
+  <!-- ── Theme / asset files ────────────────────────────────────────────── -->
+  <!--
+       Microsoft.NET.Sdk (with UseWPF=true) already picks up every loose
+       .xaml file under the project folder as an implicit Page item
+       (default EnableDefaultPageItems = true). Declaring
+       <Resource Include="Themes\...xaml"> here duplicates those same
+       items and triggers NETSDK1022, exactly like the appsettings.json
+       case in VisionCore.Service.csproj. Use <Page Update> instead —
+       it only overrides metadata (e.g. forcing the build action) on the
+       item the SDK already discovered, without adding a second item.
+  -->
+  <ItemGroup>
+    <Page Update="Themes\DarkTheme.xaml" Generator="MSBuild:Compile"/>
+    <Page Update="Themes\LightTheme.xaml" Generator="MSBuild:Compile"/>
+  </ItemGroup>
+
+  <!-- ── Tray icon ─────────────────────────────────────────────────────── -->
+  <ItemGroup>
+    <Content Include="Assets\tray.ico" CopyToOutputDirectory="PreserveNewest"/>
+  </ItemGroup>
+
+  <!-- ── appsettings (optional WPF overrides) ──────────────────────────── -->
+  <!--
+       Same NETSDK1022 cause as above: the SDK already includes
+       appsettings*.json as an implicit Content item. Use <Content Update>
+       to set CopyToOutputDirectory without re-declaring the item.
+  -->
+  <ItemGroup>
+    <Content Update="appsettings.json" CopyToOutputDirectory="PreserveNewest"/>
+  </ItemGroup>
+
+</Project>
