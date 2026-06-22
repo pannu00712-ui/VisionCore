@@ -30,7 +30,7 @@
     </Property>
 
     <Launch Condition="DOTNET8_DESKTOP_INSTALLED"
-      Message="VisionCore requires .NET 8 Windows Desktop Runtime. Please install it from https://dotnet.microsoft.com/download/dotnet/8.0 and run Setup again." />
+      Message="VisionCore requires .NET 8 Windows Desktop Runtime. Please install from https://dotnet.microsoft.com/download/dotnet/8.0" />
 
     <Property Id="INSTALL_SERVICE"           Value="1" />
     <Property Id="AUTOSTART_SERVICE"         Value="1" />
@@ -38,9 +38,9 @@
     <Property Id="CREATE_DESKTOP_SHORTCUT"   Value="1" />
     <Property Id="CREATE_STARTMENU_SHORTCUT" Value="1" />
 
+    <!-- FIX WIX0170: StopVisionCoreService was declared twice. Now only once with Overridable="yes" -->
     <InstallExecuteSequence>
-      <Custom Action="StopVisionCoreService"    Before="InstallFiles"            Condition="(NOT UPGRADINGPRODUCTCODE) AND (REMOVE~=&quot;ALL&quot;)" />
-      <Custom Action="StopVisionCoreService"    Before="InstallFiles"            Condition="UPGRADINGPRODUCTCODE" />
+      <Custom Action="StopVisionCoreService"    Before="InstallFiles"            Condition="REMOVE~=&quot;ALL&quot; OR UPGRADINGPRODUCTCODE" />
       <Custom Action="InstallVisionCoreService" After="InstallFiles"             Condition="INSTALL_SERVICE AND (NOT REMOVE)" />
       <Custom Action="StartVisionCoreService"   After="InstallVisionCoreService" Condition="AUTOSTART_SERVICE AND INSTALL_SERVICE AND (NOT REMOVE)" />
       <Custom Action="RemoveVisionCoreService"  Before="RemoveFiles"             Condition="REMOVE~=&quot;ALL&quot; AND (NOT UPGRADINGPRODUCTCODE)" />
@@ -59,7 +59,7 @@
       ExeCommand="[SystemFolder]sc.exe delete VisionCoreService"
       Execute="deferred" Impersonate="no" Return="ignore" />
 
-    <Property Id="ARPPRODUCTICON"  Value="VisionCoreIcon" />
+    <Property Id="ARPPRODUCTICON" Value="VisionCoreIcon" />
     <Icon Id="VisionCoreIcon" SourceFile="$(var.SourceDir)\app\VisionCore.WPF.exe" />
 
     <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLDIR" />

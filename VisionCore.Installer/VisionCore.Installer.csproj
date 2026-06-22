@@ -8,7 +8,6 @@
     <SourceDir Condition="'$(SourceDir)'==''">$(MSBuildThisFileDirectory)..\publish\x64</SourceDir>
     <InstallerPlatform Condition="'$(InstallerPlatform)'==''">x64</InstallerPlatform>
     <Nullable>enable</Nullable>
-    <!-- Bridge MSBuild properties into WiX preprocessor variables -->
     <DefineConstants>SourceDir=$(SourceDir);ProductVersion=$(ProductVersion)</DefineConstants>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <EnableDefaultItems>false</EnableDefaultItems>
@@ -24,11 +23,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="WixToolset.UI.wixext"                    Version="4.0.5"/>
-    <PackageReference Include="WixToolset.Util.wixext"                  Version="4.0.5"/>
-    <PackageReference Include="WixToolset.Firewall.wixext"              Version="4.0.5"/>
-    <PackageReference Include="WixToolset.Bal.wixext"                   Version="4.0.5"/>
-    <PackageReference Include="FireGiant.HeatWave.BuildTools.wixext"    Version="4.0.1"/>
+    <PackageReference Include="WixToolset.UI.wixext"       Version="4.0.5"/>
+    <PackageReference Include="WixToolset.Util.wixext"     Version="4.0.5"/>
+    <PackageReference Include="WixToolset.Firewall.wixext" Version="4.0.5"/>
+    <PackageReference Include="WixToolset.Bal.wixext"      Version="4.0.5"/>
+    <!-- FireGiant.HeatWave REMOVED - requires paid license -->
   </ItemGroup>
 
   <ItemGroup>
@@ -42,12 +41,5 @@
     <Content Include="License.rtf"           CopyToOutputDirectory="PreserveNewest"/>
     <Content Include="Assets\setup-icon.ico" CopyToOutputDirectory="PreserveNewest"/>
   </ItemGroup>
-
-  <Target Name="CheckPublishOutputs" BeforeTargets="Build">
-    <Warning Condition="!Exists('$(SourceDir)\app\VisionCore.WPF.exe')"
-             Text="WPF publish output not found at $(SourceDir)\app\. Run 'dotnet publish' first."/>
-    <Warning Condition="!Exists('$(SourceDir)\service\VisionCore.Service.exe')"
-             Text="Service publish output not found at $(SourceDir)\service\. Run 'dotnet publish' first."/>
-  </Target>
 
 </Project>
