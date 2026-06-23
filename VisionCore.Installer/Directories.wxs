@@ -1,246 +1,80 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
-  VisionCore.Installer — Directories.wxs
-  ========================================
-  Defines the directory tree and all installed files.
-
-  File harvesting
-  ---------------
-  The two ComponentGroups at the bottom use the WiX 4 HeatWave approach:
-  each <Files> element harvests an entire publish folder recursively, so
-  you never have to list binaries, DLLs, or PDB files individually.
-
-  Expected publish layout (set via -d SourceDir="..\publish"):
-    $(var.SourceDir)\
-      app\       — output of: dotnet publish VisionCore.WPF -c Release -r win-x64
-      service\   — output of: dotnet publish VisionCore.Service -c Release -r win-x64
-
-  Subdirectory note
-  -----------------
-  mediamtx\ and ffmpeg\ are NOT harvested here — they are downloaded at
-  runtime by MediaMtxDownloader / FindFfmpeg().  The installer creates the
-  empty directories so the service account has write permission.
--->
-
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
-  <!-- ══════════════════════════════════════════════════════════════════════
-       Directory tree
-       ══════════════════════════════════════════════════════════════════════ -->
-
+  <!-- Directory structure -->
   <Fragment>
-    <StandardDirectory Id="ProgramFiles64Folder">
-      <Directory Id="INSTALLDIR" Name="VisionCore">
+    <Directory Id="TARGETDIR" Name="SourceDir">
 
-        <!-- WPF tray application -->
-        <Directory Id="INSTALLDIR_APP" Name="app" />
-
-        <!-- Headless Windows Service -->
-        <Directory Id="INSTALLDIR_SERVICE" Name="service">
-          <!--
-            These subdirectories are created empty by the installer.
-            MediaMtxDownloader writes mediamtx.exe into mediamtx\ at runtime.
-            The user (or IT admin) drops ffmpeg.exe into ffmpeg\ if they want
-            a bundled copy; otherwise the service falls back to PATH.
-          -->
-          <Directory Id="INSTALLDIR_MEDIAMTX" Name="mediamtx" />
-          <Directory Id="INSTALLDIR_FFMPEG"   Name="ffmpeg" />
+      <!-- Program Files installation directory -->
+      <Directory Id="ProgramFiles6432Folder">
+        <Directory Id="INSTALLFOLDER" Name="VisionCore">
+          <Directory Id="APPFOLDER" Name="app" />
+          <Directory Id="SERVICEFOLDER" Name="service" />
         </Directory>
-
-        <!-- Shared data / config (writable by service account) -->
-        <Directory Id="INSTALLDIR_DATA" Name="data" />
-
       </Directory>
-    </StandardDirectory>
 
-    <!-- Desktop shortcut holder -->
-    <StandardDirectory Id="DesktopFolder" />
+      <!-- Start Menu shortcut directory (user profile) -->
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="STARTMENU_VISIONCORE" Name="VisionCore" />
+      </Directory>
 
-    <!-- Start Menu shortcut holder -->
-    <StandardDirectory Id="ProgramMenuFolder">
-      <Directory Id="STARTMENU_VISIONCORE" Name="VisionCore" />
-    </StandardDirectory>
+      <!-- Desktop shortcut directory -->
+      <Directory Id="DesktopFolder" Name="Desktop" />
+
+    </Directory>
   </Fragment>
 
-  <!-- ══════════════════════════════════════════════════════════════════════
-       WPF application files  (harvested from publish\app\)
-       ══════════════════════════════════════════════════════════════════════ -->
-
+  <!-- App files component group -->
   <Fragment>
-    <ComponentGroup Id="AppFiles" Directory="INSTALLDIR_APP">
-
-      <!-- Harvest everything under publish\app\ recursively.
-           The main executable gets its own component so we can reference it
-           for shortcuts and the uninstall entry. -->
-      <Component Id="VisionCoreWpfExe" Guid="C5E3F4A6-B7D8-9012-CDEF-012345678902">
-        <File
-          Id="VisionCoreWpfExeFile"
-          Source="$(var.SourceDir)\app\VisionCore.WPF.exe"
-          KeyPath="yes" />
+    <ComponentGroup Id="AppComponents" Directory="APPFOLDER">
+      <Component Id="AppFilesComponent" Guid="*">
+        <Files Include="$(var.SourceDir)\app\**" />
       </Component>
-
-      <!-- All other app files (DLLs, runtime.json, appsettings, etc.) -->
-      <Files
-        Include="$(var.SourceDir)\app\**"
-        Exclude="$(var.SourceDir)\app\VisionCore.WPF.exe" />
-
-      <!-- ── Desktop shortcut ─────────────────────────────────────────── -->
-      <!-- Directory explicitly scoped to DesktopFolder to match its
-           RemoveFolder target — same reasoning as StartMenuShortcuts below. -->
-      <Component Id="DesktopShortcut" Guid="D6F4A5B7-C8E9-0123-DEF0-123456789013"
-                 Directory="DesktopFolder"
-                 Condition="CREATE_DESKTOP_SHORTCUT">
-        <Shortcut
-          Id="DesktopShortcutVisionCore"
-          Directory="DesktopFolder"
-          Name="VisionCore"
-          Description="VisionCore Camera Streaming"
-          Target="[INSTALLDIR_APP]VisionCore.WPF.exe"
-          WorkingDirectory="INSTALLDIR_APP"
-          Icon="VisionCoreIcon" />
-        <RemoveFolder Id="RemoveDesktopShortcut" Directory="DesktopFolder" On="uninstall" />
-        <RegistryValue
-          Root="HKCU"
-          Key="SOFTWARE\VisionCore\Shortcuts"
-          Name="Desktop"
-          Type="integer"
-          Value="1"
-          KeyPath="yes" />
-      </Component>
-
-      <!-- ── Start Menu shortcuts ─────────────────────────────────────── -->
-      <!-- Directory is explicitly STARTMENU_VISIONCORE (not the default
-           INSTALLDIR_APP inherited from the enclosing ComponentGroup) so
-           that this component's directory matches its RemoveFolder target.
-           Without this, WiX's ICE64 validation fails: it requires that any
-           directory under the user profile (Start Menu lives under
-           %APPDATA%\Microsoft\Windows\Start Menu) that a component touches
-           is properly torn down by a RemoveFolder/RemoveFile scoped to a
-           component installed *in* that same directory. -->
-      <Component Id="StartMenuShortcuts" Guid="E7A5B6C8-D9F0-1234-EF01-234567890124"
-                 Directory="STARTMENU_VISIONCORE"
-                 Condition="CREATE_STARTMENU_SHORTCUT">
-        <Shortcut
-          Id="StartMenuShortcutApp"
-          Directory="STARTMENU_VISIONCORE"
-          Name="VisionCore"
-          Description="VisionCore Camera Streaming"
-          Target="[INSTALLDIR_APP]VisionCore.WPF.exe"
-          WorkingDirectory="INSTALLDIR_APP"
-          Icon="VisionCoreIcon" />
-        <Shortcut
-          Id="StartMenuShortcutUninstall"
-          Directory="STARTMENU_VISIONCORE"
-          Name="Uninstall VisionCore"
-          Description="Remove VisionCore from this computer"
-          Target="[SystemFolder]msiexec.exe"
-          Arguments="/x [ProductCode]" />
-        <RemoveFolder Id="RemoveStartMenuFolder" Directory="STARTMENU_VISIONCORE" On="uninstall" />
-        <RegistryValue
-          Root="HKCU"
-          Key="SOFTWARE\VisionCore\Shortcuts"
-          Name="StartMenu"
-          Type="integer"
-          Value="1"
-          KeyPath="yes" />
-      </Component>
-
     </ComponentGroup>
   </Fragment>
 
-  <!-- ══════════════════════════════════════════════════════════════════════
-       Windows Service files  (harvested from publish\service\)
-       ══════════════════════════════════════════════════════════════════════ -->
-
+  <!-- Service files component group -->
   <Fragment>
-    <ComponentGroup Id="ServiceFiles" Directory="INSTALLDIR_SERVICE">
-
-      <!-- Main service executable — referenced by sc.exe custom actions -->
-      <Component Id="VisionCoreServiceExe" Guid="F8B6C7D9-E0A1-2345-F012-345678901235">
-        <File
-          Id="VisionCoreServiceExeFile"
-          Source="$(var.SourceDir)\service\VisionCore.Service.exe"
-          KeyPath="yes" />
+    <ComponentGroup Id="ServiceComponents" Directory="SERVICEFOLDER">
+      <Component Id="ServiceFilesComponent" Guid="*">
+        <Files Include="$(var.SourceDir)\service\**" />
       </Component>
-
-      <!-- appsettings.json — installed once, never overwritten on upgrade
-           so the user's configuration survives. -->
-      <Component Id="AppSettingsJson" Guid="A9C7D8E0-F1B2-3456-0123-456789012346">
-        <File
-          Id="AppSettingsJsonFile"
-          Source="$(var.SourceDir)\service\appsettings.json"
-          KeyPath="yes" />
-        <!-- NeverOverwrite preserves user-edited config across upgrades -->
-        <CopyFile
-          Id="AppSettingsCopy"
-          DestinationDirectory="INSTALLDIR_SERVICE"
-          DestinationName="appsettings.json" />
-      </Component>
-
-      <!-- All remaining service files (DLLs, runtime.json, etc.) -->
-      <Files
-        Include="$(var.SourceDir)\service\**"
-        Exclude="$(var.SourceDir)\service\VisionCore.Service.exe;$(var.SourceDir)\service\appsettings.json" />
-
-      <!-- ── Empty runtime directories (created now, written at runtime) ── -->
-      <Component Id="DirMediaMtx" Guid="B0D8E9F1-A2C3-4567-1234-567890123457">
-        <CreateFolder Directory="INSTALLDIR_MEDIAMTX" />
-        <!-- Grant NetworkService write permission — the service runs as LocalSystem
-             by default, but an admin may change it. -->
-        <util:PermissionEx
-          Domain="NT SERVICE"
-          User="VisionCoreService"
-          GenericAll="yes"
-          IgnoreFailure="yes" />
-        <RegistryValue
-          Root="HKLM"
-          Key="SOFTWARE\VisionCore"
-          Name="MediaMtxDir"
-          Type="string"
-          Value="[INSTALLDIR_MEDIAMTX]"
-          KeyPath="yes" />
-      </Component>
-
-      <Component Id="DirFfmpeg" Guid="C1E9F0A2-B3D4-5678-2345-678901234568">
-        <CreateFolder Directory="INSTALLDIR_FFMPEG" />
-        <RegistryValue
-          Root="HKLM"
-          Key="SOFTWARE\VisionCore"
-          Name="FfmpegDir"
-          Type="string"
-          Value="[INSTALLDIR_FFMPEG]"
-          KeyPath="yes" />
-      </Component>
-
     </ComponentGroup>
   </Fragment>
 
-  <!-- ══════════════════════════════════════════════════════════════════════
-       Data directory  (SQLite DB, per-camera config written at runtime)
-       ══════════════════════════════════════════════════════════════════════ -->
-
+  <!-- Start Menu shortcut component -->
   <Fragment>
-    <ComponentGroup Id="DataDir" Directory="INSTALLDIR_DATA">
-      <Component Id="DirData" Guid="D2F0A1B3-C4E5-6789-3456-789012345679">
-        <CreateFolder Directory="INSTALLDIR_DATA" />
-        <!-- Full control for LocalSystem (service) and Administrators -->
-        <util:PermissionEx
-          Domain="BUILTIN"
-          User="Administrators"
-          GenericAll="yes"
-          IgnoreFailure="yes" />
-        <util:PermissionEx
-          Domain="NT AUTHORITY"
-          User="SYSTEM"
-          GenericAll="yes"
-          IgnoreFailure="yes" />
-        <RegistryValue
-          Root="HKLM"
-          Key="SOFTWARE\VisionCore"
-          Name="DataDir"
-          Type="string"
-          Value="[INSTALLDIR_DATA]"
-          KeyPath="yes" />
+    <ComponentGroup Id="ShortcutComponents" Directory="STARTMENU_VISIONCORE">
+      <Component Id="StartMenuShortcutComponent" Guid="*">
+        <Shortcut Id="StartMenuShortcut"
+                  Name="VisionCore"
+                  Description="VisionCore Application"
+                  Target="[APPFOLDER]VisionCore.WPF.exe"
+                  WorkingDirectory="APPFOLDER" />
+        <!-- REQUIRED: RemoveFolder for user-profile Start Menu dir (fixes ICE64) -->
+        <RemoveFolder Id="RemoveStartMenuFolder"
+                      Directory="STARTMENU_VISIONCORE"
+                      On="uninstall" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\VisionCore"
+                       Name="StartMenuShortcut"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+
+      <!-- Desktop shortcut component -->
+      <Component Id="DesktopShortcutComponent" Guid="*" Directory="DesktopFolder">
+        <Shortcut Id="DesktopShortcut"
+                  Name="VisionCore"
+                  Description="VisionCore Application"
+                  Target="[APPFOLDER]VisionCore.WPF.exe"
+                  WorkingDirectory="APPFOLDER" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\VisionCore"
+                       Name="DesktopShortcut"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
       </Component>
     </ComponentGroup>
   </Fragment>
