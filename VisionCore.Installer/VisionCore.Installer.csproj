@@ -5,29 +5,18 @@
     <ProductVersion Condition="'$(ProductVersion)'==''">1.0.0</ProductVersion>
     <Manufacturer>VisionCore</Manufacturer>
     <OutputName Condition="'$(OutputName)'==''">VisionCore-$(ProductVersion)-Setup-x64</OutputName>
-    <SourceDir Condition="'$(SourceDir)'==''">$(MSBuildThisFileDirectory)..\publish\x64</SourceDir>
+    <SourceDir Condition="'$(SourceDir)'==''">$(MSBuildThisFileDirectory)..\publish</SourceDir>
     <InstallerPlatform Condition="'$(InstallerPlatform)'==''">x64</InstallerPlatform>
     <Nullable>enable</Nullable>
-    <DefineConstants>SourceDir=$(SourceDir);ProductVersion=$(ProductVersion)</DefineConstants>
+    <DefineConstants>SourceDir=$(SourceDir);InstallerPlatform=$(InstallerPlatform)</DefineConstants>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <EnableDefaultItems>false</EnableDefaultItems>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(InstallerPlatform)'=='x64'">
-    <WixInstallerPlatform>x64</WixInstallerPlatform>
-    <WixArchitecture>x64</WixArchitecture>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(InstallerPlatform)'=='x86'">
-    <WixInstallerPlatform>x86</WixInstallerPlatform>
-    <WixArchitecture>x86</WixArchitecture>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="WixToolset.UI.wixext"       Version="4.0.5"/>
     <PackageReference Include="WixToolset.Util.wixext"     Version="4.0.5"/>
     <PackageReference Include="WixToolset.Firewall.wixext" Version="4.0.5"/>
-    <PackageReference Include="WixToolset.Bal.wixext"      Version="4.0.5"/>
-    <!-- FireGiant.HeatWave REMOVED - requires paid license -->
   </ItemGroup>
 
   <ItemGroup>
@@ -41,5 +30,12 @@
     <Content Include="License.rtf"           CopyToOutputDirectory="PreserveNewest"/>
     <Content Include="Assets\setup-icon.ico" CopyToOutputDirectory="PreserveNewest"/>
   </ItemGroup>
+
+  <Target Name="CheckPublishOutputs" BeforeTargets="Build">
+    <Warning Condition="!Exists('$(SourceDir)\app\VisionCore.WPF.exe')"
+             Text="WPF publish output not found at $(SourceDir)\app\. Run dotnet publish first."/>
+    <Warning Condition="!Exists('$(SourceDir)\service\VisionCore.Service.exe')"
+             Text="Service publish output not found at $(SourceDir)\service\. Run dotnet publish first."/>
+  </Target>
 
 </Project>

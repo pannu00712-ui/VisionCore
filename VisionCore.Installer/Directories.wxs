@@ -1,10 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
   <Fragment>
     <StandardDirectory Id="ProgramFiles6432Folder">
       <Directory Id="INSTALLFOLDER" Name="VisionCore">
-        <Directory Id="APPFOLDER" Name="app" />
-        <Directory Id="SERVICEFOLDER" Name="service" />
+        <Directory Id="INSTALLDIR" Name=".">
+          <Directory Id="INSTALLDIR_APP"     Name="app" />
+          <Directory Id="INSTALLDIR_SERVICE" Name="service" />
+        </Directory>
       </Directory>
     </StandardDirectory>
 
@@ -13,44 +16,80 @@
     </StandardDirectory>
 
     <StandardDirectory Id="DesktopFolder" />
+
+    <StandardDirectory Id="CommonAppDataFolder">
+      <Directory Id="DATADIR" Name="VisionCore" />
+    </StandardDirectory>
   </Fragment>
 
   <Fragment>
-    <ComponentGroup Id="AppComponents" Directory="APPFOLDER">
-      <Component Id="AppFilesComponent" Guid="a1b2c3d4-e5f6-4789-abcd-ef0123456789">
-        <File Id="AppMainExe"
+    <ComponentGroup Id="AppFiles" Directory="INSTALLDIR_APP">
+      <Component Id="AppMainExe" Guid="A1B2C3D4-E5F6-4789-ABCD-EF0123456701">
+        <File Id="VisionCoreWpfExe"
               Source="$(var.SourceDir)\app\VisionCore.WPF.exe"
               KeyPath="yes" />
       </Component>
-      <Component Id="AppDirComponent" Guid="b2c3d4e5-f6a7-4890-bcde-f01234567890">
-        <CreateFolder Directory="APPFOLDER" />
-        <RemoveFolder Id="RemoveAppFolder" Directory="APPFOLDER" On="uninstall" />
+      <Component Id="AppDepsJson" Guid="A1B2C3D4-E5F6-4789-ABCD-EF0123456702">
+        <File Id="VisionCoreWpfDeps"
+              Source="$(var.SourceDir)\app\VisionCore.WPF.deps.json"
+              KeyPath="yes" />
+      </Component>
+      <Component Id="AppRuntimeConfig" Guid="A1B2C3D4-E5F6-4789-ABCD-EF0123456703">
+        <File Id="VisionCoreWpfRuntimeConfig"
+              Source="$(var.SourceDir)\app\VisionCore.WPF.runtimeconfig.json"
+              KeyPath="yes" />
+      </Component>
+      <Component Id="CoreDll" Guid="A1B2C3D4-E5F6-4789-ABCD-EF0123456704">
+        <File Id="VisionCoreDll"
+              Source="$(var.SourceDir)\app\VisionCore.Core.dll"
+              KeyPath="yes" />
       </Component>
     </ComponentGroup>
   </Fragment>
 
   <Fragment>
-    <ComponentGroup Id="ServiceComponents" Directory="SERVICEFOLDER">
-      <Component Id="ServiceMainExe" Guid="c3d4e5f6-a7b8-4901-cdef-012345678901">
-        <File Id="ServiceExe"
+    <ComponentGroup Id="ServiceFiles" Directory="INSTALLDIR_SERVICE">
+      <Component Id="ServiceMainExe" Guid="C3D4E5F6-A7B8-4901-CDEF-012345678901">
+        <File Id="VisionCoreServiceExe"
               Source="$(var.SourceDir)\service\VisionCore.Service.exe"
               KeyPath="yes" />
       </Component>
-      <Component Id="ServiceDirComponent" Guid="d4e5f6a7-b8c9-4012-defa-123456789012">
-        <CreateFolder Directory="SERVICEFOLDER" />
-        <RemoveFolder Id="RemoveServiceFolder" Directory="SERVICEFOLDER" On="uninstall" />
+      <Component Id="ServiceDepsJson" Guid="C3D4E5F6-A7B8-4901-CDEF-012345678902">
+        <File Id="VisionCoreServiceDeps"
+              Source="$(var.SourceDir)\service\VisionCore.Service.deps.json"
+              KeyPath="yes" />
+      </Component>
+      <Component Id="ServiceRuntimeConfig" Guid="C3D4E5F6-A7B8-4901-CDEF-012345678903">
+        <File Id="VisionCoreServiceRuntimeConfig"
+              Source="$(var.SourceDir)\service\VisionCore.Service.runtimeconfig.json"
+              KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="DataDir" Directory="DATADIR">
+      <Component Id="DataDirComp" Guid="D4E5F6A7-B8C9-4012-DEFA-123456789012">
+        <CreateFolder />
+        <RemoveFolder Id="RemoveDataDir" On="uninstall" />
+        <RegistryValue Root="HKLM"
+                       Key="Software\VisionCore"
+                       Name="DataDir"
+                       Type="string"
+                       Value="[DATADIR]"
+                       KeyPath="yes" />
       </Component>
     </ComponentGroup>
   </Fragment>
 
   <Fragment>
     <ComponentGroup Id="ShortcutComponents" Directory="STARTMENU_VISIONCORE">
-      <Component Id="StartMenuShortcutComponent" Guid="e5f6a7b8-c9d0-4123-efab-234567890123">
+      <Component Id="StartMenuShortcutComp" Guid="E5F6A7B8-C9D0-4123-EFAB-234567890123">
         <Shortcut Id="StartMenuShortcut"
                   Name="VisionCore"
-                  Description="VisionCore Application"
-                  Target="[APPFOLDER]VisionCore.WPF.exe"
-                  WorkingDirectory="APPFOLDER" />
+                  Description="VisionCore Camera Streaming Platform"
+                  Target="[INSTALLDIR_APP]VisionCore.WPF.exe"
+                  WorkingDirectory="INSTALLDIR_APP" />
         <RemoveFolder Id="RemoveStartMenuFolder"
                       Directory="STARTMENU_VISIONCORE"
                       On="uninstall" />
@@ -62,12 +101,12 @@
                        KeyPath="yes" />
       </Component>
 
-      <Component Id="DesktopShortcutComponent" Guid="f6a7b8c9-d0e1-4234-fabc-345678901234" Directory="DesktopFolder">
+      <Component Id="DesktopShortcutComp" Guid="F6A7B8C9-D0E1-4234-FABC-345678901234" Directory="DesktopFolder">
         <Shortcut Id="DesktopShortcut"
                   Name="VisionCore"
-                  Description="VisionCore Application"
-                  Target="[APPFOLDER]VisionCore.WPF.exe"
-                  WorkingDirectory="APPFOLDER" />
+                  Description="VisionCore Camera Streaming Platform"
+                  Target="[INSTALLDIR_APP]VisionCore.WPF.exe"
+                  WorkingDirectory="INSTALLDIR_APP" />
         <RegistryValue Root="HKCU"
                        Key="Software\VisionCore"
                        Name="DesktopShortcut"
