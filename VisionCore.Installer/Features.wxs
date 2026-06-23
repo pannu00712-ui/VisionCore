@@ -15,32 +15,26 @@
       <Feature
         Id="AppFeature"
         Title="VisionCore Desktop App"
-        Description="The WPF tray application — dashboard, camera editor, live logs, and settings."
+        Description="The WPF tray application."
         Level="1"
         Display="expand"
         InstallDefault="local"
         AllowAbsent="no">
-
         <ComponentGroupRef Id="AppFiles" />
         <ComponentGroupRef Id="RegistryEntries" />
         <ComponentGroupRef Id="ShortcutComponents" />
-
       </Feature>
 
       <Feature
         Id="ServiceFeature"
         Title="Background Windows Service"
-        Description="Runs the RTSP/ONVIF streaming engine as a Windows Service (VisionCoreService)."
+        Description="Runs the RTSP/ONVIF streaming engine as a Windows Service."
         Level="1"
         Display="expand"
         InstallDefault="local"
         AllowAbsent="yes">
-
-        <Condition Level="0">NOT INSTALL_SERVICE</Condition>
-
         <ComponentGroupRef Id="ServiceFiles" />
         <ComponentGroupRef Id="DataDir" />
-
       </Feature>
 
     </Feature>
