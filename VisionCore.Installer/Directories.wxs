@@ -1,10 +1,8 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
-  <!-- Directory structure -->
   <Fragment>
     <Directory Id="TARGETDIR" Name="SourceDir">
 
-      <!-- Program Files installation directory -->
       <Directory Id="ProgramFiles6432Folder">
         <Directory Id="INSTALLFOLDER" Name="VisionCore">
           <Directory Id="APPFOLDER" Name="app" />
@@ -12,18 +10,15 @@
         </Directory>
       </Directory>
 
-      <!-- Start Menu shortcut directory (user profile) -->
       <Directory Id="ProgramMenuFolder">
         <Directory Id="STARTMENU_VISIONCORE" Name="VisionCore" />
       </Directory>
 
-      <!-- Desktop shortcut directory -->
       <Directory Id="DesktopFolder" Name="Desktop" />
 
     </Directory>
   </Fragment>
 
-  <!-- App files component group -->
   <Fragment>
     <ComponentGroup Id="AppComponents" Directory="APPFOLDER">
       <Component Id="AppFilesComponent" Guid="*">
@@ -32,7 +27,6 @@
     </ComponentGroup>
   </Fragment>
 
-  <!-- Service files component group -->
   <Fragment>
     <ComponentGroup Id="ServiceComponents" Directory="SERVICEFOLDER">
       <Component Id="ServiceFilesComponent" Guid="*">
@@ -41,7 +35,6 @@
     </ComponentGroup>
   </Fragment>
 
-  <!-- Start Menu shortcut component -->
   <Fragment>
     <ComponentGroup Id="ShortcutComponents" Directory="STARTMENU_VISIONCORE">
       <Component Id="StartMenuShortcutComponent" Guid="*">
@@ -50,7 +43,6 @@
                   Description="VisionCore Application"
                   Target="[APPFOLDER]VisionCore.WPF.exe"
                   WorkingDirectory="APPFOLDER" />
-        <!-- REQUIRED: RemoveFolder for user-profile Start Menu dir (fixes ICE64) -->
         <RemoveFolder Id="RemoveStartMenuFolder"
                       Directory="STARTMENU_VISIONCORE"
                       On="uninstall" />
@@ -61,8 +53,6 @@
                        Value="1"
                        KeyPath="yes" />
       </Component>
-
-      <!-- Desktop shortcut component -->
       <Component Id="DesktopShortcutComponent" Guid="*" Directory="DesktopFolder">
         <Shortcut Id="DesktopShortcut"
                   Name="VisionCore"
