@@ -1,43 +1,35 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
   <Fragment>
-    <Directory Id="TARGETDIR" Name="SourceDir">
-
-      <Directory Id="ProgramFiles6432Folder">
-        <Directory Id="INSTALLFOLDER" Name="VisionCore">
-          <Directory Id="APPFOLDER" Name="app" />
-          <Directory Id="SERVICEFOLDER" Name="service" />
-        </Directory>
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLFOLDER" Name="VisionCore">
+        <Directory Id="APPFOLDER" Name="app" />
+        <Directory Id="SERVICEFOLDER" Name="service" />
       </Directory>
+    </StandardDirectory>
 
-      <Directory Id="ProgramMenuFolder">
-        <Directory Id="STARTMENU_VISIONCORE" Name="VisionCore" />
-      </Directory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="STARTMENU_VISIONCORE" Name="VisionCore" />
+    </StandardDirectory>
 
-      <Directory Id="DesktopFolder" Name="Desktop" />
-
-    </Directory>
+    <StandardDirectory Id="DesktopFolder" />
   </Fragment>
 
   <Fragment>
     <ComponentGroup Id="AppComponents" Directory="APPFOLDER">
-      <Component Id="AppFilesComponent" Guid="*">
-        <Files Include="$(var.SourceDir)\app\**" />
-      </Component>
+      <Files Include="$(var.SourceDir)\app\**" />
     </ComponentGroup>
   </Fragment>
 
   <Fragment>
     <ComponentGroup Id="ServiceComponents" Directory="SERVICEFOLDER">
-      <Component Id="ServiceFilesComponent" Guid="*">
-        <Files Include="$(var.SourceDir)\service\**" />
-      </Component>
+      <Files Include="$(var.SourceDir)\service\**" />
     </ComponentGroup>
   </Fragment>
 
   <Fragment>
     <ComponentGroup Id="ShortcutComponents" Directory="STARTMENU_VISIONCORE">
-      <Component Id="StartMenuShortcutComponent" Guid="*">
+      <Component Id="StartMenuShortcutComponent" Guid="d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f80">
         <Shortcut Id="StartMenuShortcut"
                   Name="VisionCore"
                   Description="VisionCore Application"
@@ -53,7 +45,8 @@
                        Value="1"
                        KeyPath="yes" />
       </Component>
-      <Component Id="DesktopShortcutComponent" Guid="*" Directory="DesktopFolder">
+
+      <Component Id="DesktopShortcutComponent" Guid="e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a90" Directory="DesktopFolder">
         <Shortcut Id="DesktopShortcut"
                   Name="VisionCore"
                   Description="VisionCore Application"
