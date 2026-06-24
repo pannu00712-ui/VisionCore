@@ -8,7 +8,7 @@
     <SourceDir Condition="'$(SourceDir)'==''">$(MSBuildThisFileDirectory)..\publish</SourceDir>
     <InstallerPlatform Condition="'$(InstallerPlatform)'==''">x64</InstallerPlatform>
     <Nullable>enable</Nullable>
-    <DefineConstants>SourceDir=$(SourceDir)</DefineConstants>
+    <DefineConstants>SourceDir=$(SourceDir);ProductVersion=$(ProductVersion)</DefineConstants>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <EnableDefaultItems>false</EnableDefaultItems>
   </PropertyGroup>
