@@ -28,6 +28,8 @@
   </ItemGroup>
 
   <Target Name="CheckMsiExists" BeforeTargets="Build">
-    <Warning Condit  </Target>
+    <Warning Condition="!Exists('$(MsiPath)')"
+             Text="MSI not found at $(MsiPath). Build VisionCore.Installer.csproj first."/>
+  </Target>
 
 </Project>
