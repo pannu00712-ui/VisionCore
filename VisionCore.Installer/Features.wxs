@@ -23,7 +23,6 @@
         <ComponentGroupRef Id="AppFiles" />
         <ComponentGroupRef Id="RegistryEntries" />
         <ComponentGroupRef Id="ShortcutComponents" />
-        <ComponentGroupRef Id="FirewallRules" />
       </Feature>
 
       <Feature
