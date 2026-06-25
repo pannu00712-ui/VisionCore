@@ -68,6 +68,7 @@
           Description="Remove VisionCore from this computer"
           Target="[SystemFolder]msiexec.exe"
           Arguments="/x [ProductCode]" />
+        <RemoveFolder Id="RemoveStartMenuShortcuts" Directory="STARTMENU_VISIONCORE" On="uninstall" />
         <RegistryValue Root="HKCU" Key="SOFTWARE\VisionCore\Shortcuts"
           Name="StartMenu" Type="integer" Value="1" KeyPath="yes" />
       </Component>
