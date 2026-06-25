@@ -8,21 +8,6 @@
     <OutputName Condition="'$(OutputName)'==''">VisionCore-$(ProductVersion)-Setup-x64</OutputName>
     <MsiPath Condition="'$(MsiPath)'==''">$(MSBuildThisFileDirectory)bin\Release\VisionCore-$(ProductVersion)-Setup-x64.msi</MsiPath>
     <Nullable>enable</Nullable>
-    <DefineConstants>MsiPath=$(MsiPath);ProductVersion=$(ProductVersion)</DefineCons
-cd "C:\Users\annu\Downloads\VisionCore"
-
-# Fix VisionCore.Bundle.csproj - OutputType Bundle add karo
-@'
-<Project Sdk="WixToolset.Sdk/4.0.5">
-
-  <PropertyGroup>
-    <OutputType>Bundle</OutputType>
-    <ProductName>VisionCore</ProductName>
-    <ProductVersion Condition="'$(ProductVersion)'==''">1.0.0</ProductVersion>
-    <Manufacturer>VisionCore</Manufacturer>
-    <OutputName Condition="'$(OutputName)'==''">VisionCore-$(ProductVersion)-Setup-x64</OutputName>
-    <MsiPath Condition="'$(MsiPath)'==''">$(MSBuildThisFileDirectory)bin\Release\VisionCore-$(ProductVersion)-Setup-x64.msi</MsiPath>
-    <Nullable>enable</Nullable>
     <DefineConstants>MsiPath=$(MsiPath);ProductVersion=$(ProductVersion)</DefineConstants>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <EnableDefaultItems>false</EnableDefaultItems>
@@ -43,8 +28,6 @@ cd "C:\Users\annu\Downloads\VisionCore"
   </ItemGroup>
 
   <Target Name="CheckMsiExists" BeforeTargets="Build">
-    <Warning Condition="!Exists('$(MsiPath)')"
-             Text="MSI not found at $(MsiPath). Build VisionCore.Installer.csproj first."/>
-  </Target>
+    <Warning Condit  </Target>
 
 </Project>
