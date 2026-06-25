@@ -1,4 +1,4 @@
-<Project Sdk="WixToolset.Sdk/4.0.5">
+﻿<Project Sdk="WixToolset.Sdk/4.0.5">
   <PropertyGroup>
     <ProductName>VisionCore</ProductName>
     <ProductVersion Condition="'$(ProductVersion)'==''">1.0.0</ProductVersion>
