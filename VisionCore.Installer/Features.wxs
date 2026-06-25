@@ -1,40 +1,24 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
   <Fragment>
-    <Feature
-      Id="ProductFeature"
-      Title="VisionCore"
-      Description="The core VisionCore platform."
-      Level="1"
-      ConfigurableDirectory="INSTALLDIR"
-      Display="expand"
-      InstallDefault="local"
-      AllowAbsent="no">
+    <Feature Id="ProductFeature" Title="VisionCore" Level="1"
+      ConfigurableDirectory="INSTALLDIR" Display="expand"
+      InstallDefault="local" AllowAbsent="no">
 
-      <Feature
-        Id="AppFeature"
-        Title="VisionCore Desktop App"
-        Description="The WPF tray application."
-        Level="1"
-        Display="expand"
-        InstallDefault="local"
-        AllowAbsent="no">
+      <Feature Id="AppFeature" Title="VisionCore Desktop App" Level="1"
+        Display="expand" InstallDefault="local" AllowAbsent="no">
         <ComponentGroupRef Id="AppFiles" />
         <ComponentGroupRef Id="RegistryEntries" />
-        <ComponentGroupRef Id="ShortcutComponents" />
+        <ComponentGroupRef Id="StartMenuDirCleanup" />
       </Feature>
 
-      <Feature
-        Id="ServiceFeature"
-        Title="Background Windows Service"
-        Description="Runs the RTSP/ONVIF streaming engine as a Windows Service."
-        Level="1"
-        Display="expand"
-        InstallDefault="local"
-        AllowAbsent="yes">
+      <Feature Id="ServiceFeature" Title="Background Windows Service" Level="1"
+        Display="expand" InstallDefault="local" AllowAbsent="yes">
+        <Level Value="0" Condition="NOT INSTALL_SERVICE" />
         <ComponentGroupRef Id="ServiceFiles" />
         <ComponentGroupRef Id="DataDir" />
+        <ComponentGroupRef Id="FirewallRules" />
       </Feature>
 
     </Feature>
