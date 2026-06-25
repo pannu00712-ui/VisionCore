@@ -4,7 +4,7 @@
 
   <Bundle
     Name="VisionCore"
-    Version="$(var.ProductVersion).0"
+    Version="$(var.ProductVersion)"
     Manufacturer="VisionCore"
     UpgradeCode="F5B8D3C2-9E4A-4F7B-A0D1-23E4F6A8B902"
     IconSourceFile="Assets\setup-icon.ico"
