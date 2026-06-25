@@ -1,1 +1,9 @@
-﻿... XML ...
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <Fragment>
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+  </Fragment>
+
+</Wix>

@@ -1,1 +1,115 @@
-﻿... XML ...
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util"
+     xmlns:fw="http://wixtoolset.org/schemas/v4/wxs/firewall">
+
+  <Package
+    Name="VisionCore"
+    Manufacturer="VisionCore"
+    Version="$(var.ProductVersion)"
+    UpgradeCode="E4A7C2D1-8F3B-4E9A-B6C0-12D3E5F7A801"
+    Language="1033"
+    Codepage="1252"
+    InstallerVersion="500"
+    Compressed="yes"
+    Scope="perMachine">
+
+    <MajorUpgrade
+      DowngradeErrorMessage="A newer version of VisionCore is already installed."
+      Schedule="afterInstallInitialize"
+      AllowDowngrades="no"
+      AllowSameVersionUpgrades="no" />
+
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Property Id="DOTNET8_DESKTOP_INSTALLED">
+      <RegistrySearch Id="SearchDotNet8Desktop64" Root="HKLM"
+        Key="SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App"
+        Name="8.0.0" Type="raw" />
+    </Property>
+
+    <Launch Condition="DOTNET8_DESKTOP_INSTALLED"
+      Message="VisionCore requires .NET 8 Windows Desktop Runtime. Please install from https://dotnet.microsoft.com/download/dotnet/8.0" />
+
+    <Property Id="INSTALL_SERVICE"           Value="1" />
+    <Property Id="AUTOSTART_SERVICE"         Value="1" />
+    <Property Id="ADD_FIREWALL_RULE"         Value="1" />
+    <Property Id="CREATE_DESKTOP_SHORTCUT"   Value="1" />
+    <Property Id="CREATE_STARTMENU_SHORTCUT" Value="1" />
+
+    <InstallExecuteSequence>
+      <Custom Action="StopVisionCoreService"    Before="InstallFiles"            Condition="REMOVE~=&quot;ALL&quot; OR UPGRADINGPRODUCTCODE" />
+      <Custom Action="InstallVisionCoreService" After="InstallFiles"             Condition="INSTALL_SERVICE AND (NOT REMOVE)" />
+      <Custom Action="StartVisionCoreService"   After="InstallVisionCoreService" Condition="AUTOSTART_SERVICE AND INSTALL_SERVICE AND (NOT REMOVE)" />
+      <Custom Action="RemoveVisionCoreService"  Before="RemoveFiles"             Condition="REMOVE~=&quot;ALL&quot; AND (NOT UPGRADINGPRODUCTCODE)" />
+    </InstallExecuteSequence>
+
+    <CustomAction Id="InstallVisionCoreService" Directory="INSTALLDIR_SERVICE"
+      ExeCommand="[SystemFolder]sc.exe create VisionCoreService binPath= &quot;[INSTALLDIR_SERVICE]VisionCore.Service.exe&quot; start= auto DisplayName= &quot;VisionCore Streaming Engine&quot;"
+      Execute="deferred" Impersonate="no" Return="ignore" />
+    <CustomAction Id="StartVisionCoreService" Directory="INSTALLDIR_SERVICE"
+      ExeCommand="[SystemFolder]sc.exe start VisionCoreService"
+      Execute="deferred" Impersonate="no" Return="ignore" />
+    <CustomAction Id="StopVisionCoreService" Directory="INSTALLDIR_SERVICE"
+      ExeCommand="[SystemFolder]sc.exe stop VisionCoreService"
+      Execute="deferred" Impersonate="no" Return="ignore" />
+    <CustomAction Id="RemoveVisionCoreService" Directory="INSTALLDIR_SERVICE"
+      ExeCommand="[SystemFolder]sc.exe delete VisionCoreService"
+      Execute="deferred" Impersonate="no" Return="ignore" />
+
+    <Property Id="ARPPRODUCTICON" Value="VisionCoreIcon" />
+    <Icon Id="VisionCoreIcon" SourceFile="$(var.SourceDir)\app\VisionCore.WPF.exe" />
+
+  </Package>
+
+  <!-- ui:WixUI MUST be in Fragment, not inside Package -->
+  <Fragment>
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLDIR" />
+  </Fragment>
+
+  <!-- FirewallRules in Fragment -->
+  <Fragment>
+    <ComponentGroup Id="FirewallRules" Directory="TARGETDIR">
+      <Component Id="FwRtspComponent" Guid="11111111-1111-1111-1111-111111111101">
+        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore\Firewall" Name="Rtsp"
+          Type="integer" Value="1" KeyPath="yes" />
+        <fw:FirewallException Id="FwRtsp" Name="VisionCore RTSP (8554)"
+          Port="8554" Protocol="tcp" Scope="any" />
+      </Component>
+      <Component Id="FwRestApiComponent" Guid="11111111-1111-1111-1111-111111111102">
+        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore\Firewall" Name="RestApi"
+          Type="integer" Value="1" KeyPath="yes" />
+        <fw:FirewallException Id="FwRestApi" Name="VisionCore REST API (7880)"
+          Port="7880" Protocol="tcp" Scope="localSubnet" />
+      </Component>
+      <Component Id="FwOnvifComponent" Guid="11111111-1111-1111-1111-111111111103">
+        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore\Firewall" Name="Onvif"
+          Type="integer" Value="1" KeyPath="yes" />
+        <fw:FirewallException Id="FwOnvif" Name="VisionCore ONVIF (8080)"
+          Port="8080" Protocol="tcp" Scope="any" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!-- RegistryEntries in Fragment -->
+  <Fragment>
+    <ComponentGroup Id="RegistryEntries" Directory="TARGETDIR">
+      <Component Id="RegInstallPath" Guid="A3C1D2E4-F5B6-7890-ABCD-EF1234567890">
+        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="InstallPath"
+          Type="string" Value="[INSTALLDIR]" KeyPath="yes" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="Version"
+          Type="string" Value="$(var.ProductVersion)" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="ServiceName"
+          Type="string" Value="VisionCoreService" />
+      </Component>
+      <Component Id="RegStartWithWindows" Guid="B4D2E3F5-A6C7-8901-BCDE-F01234567891">
+        <RegistryValue Root="HKCU"
+          Key="SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+          Name="VisionCore" Type="string"
+          Value="[INSTALLDIR_APP]VisionCore.WPF.exe --minimized" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+</Wix>
