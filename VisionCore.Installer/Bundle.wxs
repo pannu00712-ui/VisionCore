@@ -13,26 +13,6 @@
 
     <BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.HyperlinkLicense" />
 
-quit
-
-cd "C:\Users\annu\Downloads\VisionCore"
-
-@'
-<?xml version="1.0" encoding="utf-8"?>
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
-     xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal"
-     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
-
-  <Bundle
-    Name="VisionCore"
-    Version="$(var.ProductVersion)"
-    Manufacturer="VisionCore"
-    UpgradeCode="F5B8D3C2-9E4A-4F7B-A0D1-23E4F6A8B902"
-    IconSourceFile="Assets\setup-icon.ico"
-    DisableModify="button">
-
-    <BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.HyperlinkLicense" />
-
     <Variable Name="INSTALL_SERVICE"           Type="numeric" Value="1" bal:Overridable="yes" />
     <Variable Name="AUTOSTART_SERVICE"         Type="numeric" Value="1" bal:Overridable="yes" />
     <Variable Name="ADD_FIREWALL_RULE"         Type="numeric" Value="1" bal:Overridable="yes" />
