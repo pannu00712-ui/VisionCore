@@ -1,5 +1,4 @@
 <Project Sdk="WixToolset.Sdk/4.0.5">
-
   <PropertyGroup>
     <ProductName>VisionCore</ProductName>
     <ProductVersion Condition="'$(ProductVersion)'==''">1.0.0</ProductVersion>
@@ -11,8 +10,8 @@
     <DefineConstants>SourceDir=$(SourceDir);ProductVersion=$(ProductVersion)</DefineConstants>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <EnableDefaultItems>false</EnableDefaultItems>
+    <SuppressIces>ICE64;ICE71</SuppressIces>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(InstallerPlatform)'=='x64'">
     <WixInstallerPlatform>x64</WixInstallerPlatform>
     <WixArchitecture>x64</WixArchitecture>
@@ -21,23 +20,19 @@
     <WixInstallerPlatform>x86</WixInstallerPlatform>
     <WixArchitecture>x86</WixArchitecture>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="WixToolset.UI.wixext"       Version="4.0.5"/>
     <PackageReference Include="WixToolset.Util.wixext"     Version="4.0.5"/>
     <PackageReference Include="WixToolset.Firewall.wixext" Version="4.0.5"/>
   </ItemGroup>
-
   <ItemGroup>
     <Compile Include="Package.wxs"/>
     <Compile Include="Directories.wxs"/>
     <Compile Include="Features.wxs"/>
     <Compile Include="UI.wxs"/>
   </ItemGroup>
-
   <ItemGroup>
     <Content Include="License.rtf"           CopyToOutputDirectory="PreserveNewest"/>
     <Content Include="Assets\setup-icon.ico" CopyToOutputDirectory="PreserveNewest"/>
   </ItemGroup>
-
 </Project>
