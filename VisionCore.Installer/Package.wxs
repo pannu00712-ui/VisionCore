@@ -76,6 +76,14 @@
       Return="ignore" />
 
     <CustomAction
+      Id="SetServiceDescription"
+      Directory="INSTALLDIR_SERVICE"
+      ExeCommand="[SystemFolder]sc.exe description VisionCoreService &quot;Manages RTSP / ONVIF camera streams, motion detection, and the REST API for the VisionCore surveillance platform.&quot;"
+      Execute="deferred"
+      Impersonate="no"
+      Return="ignore" />
+
+    <CustomAction
       Id="StartVisionCoreService"
       Directory="INSTALLDIR_SERVICE"
       ExeCommand="[SystemFolder]sc.exe start VisionCoreService"
@@ -98,6 +106,33 @@
       Execute="deferred"
       Impersonate="no"
       Return="ignore" />
+
+    <fw:FirewallException
+      Id="FwRtsp"
+      Name="VisionCore RTSP (8554)"
+      Port="8554"
+      Protocol="tcp"
+      Scope="any"
+      IgnoreFailure="yes"
+      Condition="ADD_FIREWALL_RULE" />
+
+    <fw:FirewallException
+      Id="FwRestApi"
+      Name="VisionCore REST API (7880)"
+      Port="7880"
+      Protocol="tcp"
+      Scope="localSubnet"
+      IgnoreFailure="yes"
+      Condition="ADD_FIREWALL_RULE" />
+
+    <fw:FirewallException
+      Id="FwOnvif"
+      Name="VisionCore ONVIF (8080)"
+      Port="8080"
+      Protocol="tcp"
+      Scope="any"
+      IgnoreFailure="yes"
+      Condition="ADD_FIREWALL_RULE" />
 
     <ComponentGroup Id="RegistryEntries" Directory="TARGETDIR">
       <Component Id="RegInstallPath" Guid="A3C1D2E4-F5B6-7890-ABCD-EF1234567890">
@@ -139,40 +174,4 @@
     <Icon Id="VisionCoreIcon" SourceFile="$(var.SourceDir)\app\VisionCore.WPF.exe" />
 
   </Package>
-
-  <Fragment>
-    <ComponentGroup Id="FirewallRules" Directory="INSTALLDIR_APP">
-      <Component Id="FwRtspComp" Guid="FA000001-0000-0000-0000-000000000001">
-        <fw:FirewallException
-          Id="FwRtsp"
-          Name="VisionCore RTSP (8554)"
-          Port="8554"
-          Protocol="tcp"
-          Scope="any"
-          IgnoreFailure="yes" />
-        <RegistryValue Root="HKCU" Key="Software\VisionCore" Name="FwRtsp" Type="integer" Value="1" KeyPath="yes" />
-      </Component>
-      <Component Id="FwRestApiComp" Guid="FA000002-0000-0000-0000-000000000002">
-        <fw:FirewallException
-          Id="FwRestApi"
-          Name="VisionCore REST API (7880)"
-          Port="7880"
-          Protocol="tcp"
-          Scope="localSubnet"
-          IgnoreFailure="yes" />
-        <RegistryValue Root="HKCU" Key="Software\VisionCore" Name="FwRestApi" Type="integer" Value="1" KeyPath="yes" />
-      </Component>
-      <Component Id="FwOnvifComp" Guid="FA000003-0000-0000-0000-000000000003">
-        <fw:FirewallException
-          Id="FwOnvif"
-          Name="VisionCore ONVIF (8080)"
-          Port="8080"
-          Protocol="tcp"
-          Scope="any"
-          IgnoreFailure="yes" />
-        <RegistryValue Root="HKCU" Key="Software\VisionCore" Name="FwOnvif" Type="integer" Value="1" KeyPath="yes" />
-      </Component>
-    </ComponentGroup>
-  </Fragment>
-
 </Wix>
