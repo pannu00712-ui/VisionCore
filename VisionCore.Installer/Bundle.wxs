@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
-     xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal">
+     xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
 
   <Bundle
     Name="VisionCore"
@@ -8,8 +9,6 @@
     Manufacturer="VisionCore"
     UpgradeCode="F5B8D3C2-9E4A-4F7B-A0D1-23E4F6A8B902"
     IconSourceFile="Assets\setup-icon.ico"
-    About="VisionCore Camera Streaming Platform"
-    HelpUrl="https://github.com/your-org/visioncore"
     DisableModify="button">
 
     <bal:WixStandardBootstrapperApplication
@@ -25,7 +24,44 @@
     <Variable Name="CREATE_STARTMENU_SHORTCUT" Type="numeric" Value="1" bal:Overridable="yes" />
 
     <util:RegistrySearch
-      xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util"
+      Id="SearchDotNet8Desktop"
+      Root="HKLM"
+      Key="SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App"
+      Value="8.0.0"
+      Variable="DotNet8DesktopInstalled"
+      Result="exists" />
+
+    <Chain DisableRollback="no">
+
+cd "C:\Users\annu\Downloads\VisionCore"
+
+@'
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <Bundle
+    Name="VisionCore"
+    Version="$(var.ProductVersion)"
+    Manufacturer="VisionCore"
+    UpgradeCode="F5B8D3C2-9E4A-4F7B-A0D1-23E4F6A8B902"
+    IconSourceFile="Assets\setup-icon.ico"
+    DisableModify="button">
+
+    <bal:WixStandardBootstrapperApplication
+      LicenseFile="License.rtf"
+      Theme="hyperlinkLicense"
+      SuppressOptionsUI="no"
+      ShowVersion="yes" />
+
+    <Variable Name="INSTALL_SERVICE"           Type="numeric" Value="1" bal:Overridable="yes" />
+    <Variable Name="AUTOSTART_SERVICE"         Type="numeric" Value="1" bal:Overridable="yes" />
+    <Variable Name="ADD_FIREWALL_RULE"         Type="numeric" Value="1" bal:Overridable="yes" />
+    <Variable Name="CREATE_DESKTOP_SHORTCUT"   Type="numeric" Value="1" bal:Overridable="yes" />
+    <Variable Name="CREATE_STARTMENU_SHORTCUT" Type="numeric" Value="1" bal:Overridable="yes" />
+
+    <util:RegistrySearch
       Id="SearchDotNet8Desktop"
       Root="HKLM"
       Key="SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App"
@@ -40,10 +76,10 @@
         Name=".NET 8 Windows Desktop Runtime"
         SourceFile="https://aka.ms/dotnet/8.0/windowsdesktop-runtime-win-x64.exe"
         DownloadUrl="https://aka.ms/dotnet/8.0/windowsdesktop-runtime-win-x64.exe"
-        InstallCommand="/install /quiet /norestart"
-        RepairCommand="/repair /quiet /norestart"
-        UninstallCommand="/uninstall /quiet /norestart"
         DetectCondition="DotNet8DesktopInstalled"
+        InstallArguments="/install /quiet /norestart"
+        RepairArguments="/repair /quiet /norestart"
+        UninstallArguments="/uninstall /quiet /norestart"
         Compressed="no"
         PerMachine="yes"
         Vital="yes" />
