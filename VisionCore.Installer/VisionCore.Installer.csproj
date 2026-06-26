@@ -7,7 +7,7 @@
     <SourceDir Condition="'$(SourceDir)'==''">$(MSBuildThisFileDirectory)..\publish\x64</SourceDir>
     <InstallerPlatform Condition="'$(InstallerPlatform)'==''">x64</InstallerPlatform>
     <Nullable>enable</Nullable>
-    <DefineConstants>SourceDir=$(SourceDir);ProductVersion=$(ProductVersion);InstallerPlatform=$(InstallerPlatform)</DefineConstants>
+    <DefineConstants>SourceDir=$(SourceDir);ProductVersion=$(ProductVersion);NetfxPlatform=$(InstallerPlatform)</DefineConstants>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <EnableDefaultItems>false</EnableDefaultItems>
     <SuppressIces>ICE64;ICE71</SuppressIces>

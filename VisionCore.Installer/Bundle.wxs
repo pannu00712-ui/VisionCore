@@ -37,7 +37,7 @@
     <netfx:DotNetCoreSearch
       RuntimeType="desktop"
       MajorVersion="8"
-      Platform="$(var.InstallerPlatform)"
+      Platform="$(var.NetfxPlatform)"
       Variable="DOTNET8_DESKTOP_VERSION" />
 
     <bal:Condition Message="VisionCore requires the .NET 8 Desktop Runtime, which was not found on this computer. Download and install it from https://dotnet.microsoft.com/download/dotnet/8.0 (choose the &quot;.NET Desktop Runtime&quot; installer for your system), then run this setup again.">DOTNET8_DESKTOP_VERSION</bal:Condition>

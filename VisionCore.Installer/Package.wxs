@@ -35,7 +35,7 @@
     <netfx:DotNetCoreSearch
       RuntimeType="desktop"
       MajorVersion="8"
-      Platform="$(var.InstallerPlatform)"
+      Platform="$(var.NetfxPlatform)"
       Variable="DOTNET8_DESKTOP_VERSION" />
 
     <Launch Condition="DOTNET8_DESKTOP_VERSION"
