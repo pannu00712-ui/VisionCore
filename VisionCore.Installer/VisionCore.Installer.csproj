@@ -21,19 +21,19 @@
     <WixArchitecture>x86</WixArchitecture>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="WixToolset.UI.wixext"       Version="4.0.6"/>
-    <PackageReference Include="WixToolset.Util.wixext"     Version="4.0.6"/>
-    <PackageReference Include="WixToolset.Firewall.wixext" Version="4.0.6"/>
-    <PackageReference Include="WixToolset.Netfx.wixext"    Version="4.0.6"/>
+    <PackageReference Include="WixToolset.UI.wixext" Version="4.0.6" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="4.0.6" />
+    <PackageReference Include="WixToolset.Firewall.wixext" Version="4.0.6" />
+    <PackageReference Include="WixToolset.Netfx.wixext" Version="4.0.6" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Package.wxs"/>
-    <Compile Include="Directories.wxs"/>
-    <Compile Include="Features.wxs"/>
-    <Compile Include="UI.wxs"/>
+    <Compile Include="Package.wxs" />
+    <Compile Include="Directories.wxs" />
+    <Compile Include="Features.wxs" />
+    <Compile Include="UI.wxs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="License.rtf"           CopyToOutputDirectory="PreserveNewest"/>
-    <Content Include="Assets\setup-icon.ico" CopyToOutputDirectory="PreserveNewest"/>
+    <Content Include="License.rtf" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\setup-icon.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
