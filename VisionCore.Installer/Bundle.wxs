@@ -11,7 +11,12 @@
     IconSourceFile="Assets\setup-icon.ico"
     DisableModify="button">
 
-    <BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.HyperlinkLicense" />
+    <BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.HyperlinkLicense">
+      <bal:WixStandardBootstrapperApplication
+        LicenseFile="License.rtf"
+        ShowVersion="yes"
+        SuppressOptionsUI="no" />
+    </BootstrapperApplicationRef>
 
     <Variable Name="INSTALL_SERVICE"           Type="numeric" Value="1" bal:Overridable="yes" />
     <Variable Name="AUTOSTART_SERVICE"         Type="numeric" Value="1" bal:Overridable="yes" />
