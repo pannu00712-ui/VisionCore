@@ -7,7 +7,7 @@
     <SourceDir Condition="'$(SourceDir)'==''">$(MSBuildThisFileDirectory)..\publish\x64</SourceDir>
     <InstallerPlatform Condition="'$(InstallerPlatform)'==''">x64</InstallerPlatform>
     <Nullable>enable</Nullable>
-    <DefineConstants>SourceDir=$(SourceDir);ProductVersion=$(ProductVersion)</DefineConstants>
+    <DefineConstants>SourceDir=$(SourceDir);ProductVersion=$(ProductVersion);InstallerPlatform=$(InstallerPlatform)</DefineConstants>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <EnableDefaultItems>false</EnableDefaultItems>
     <SuppressIces>ICE64;ICE71</SuppressIces>
@@ -24,6 +24,7 @@
     <PackageReference Include="WixToolset.UI.wixext"       Version="4.0.6"/>
     <PackageReference Include="WixToolset.Util.wixext"     Version="4.0.6"/>
     <PackageReference Include="WixToolset.Firewall.wixext" Version="4.0.6"/>
+    <PackageReference Include="WixToolset.Netfx.wixext"    Version="4.0.6"/>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Package.wxs"/>

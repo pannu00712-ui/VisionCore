@@ -6,14 +6,24 @@
     <Manufacturer>VisionCore</Manufacturer>
     <OutputName Condition="'$(OutputName)'==''">VisionCore-$(ProductVersion)-Setup-x64</OutputName>
     <MsiPath Condition="'$(MsiPath)'==''">$(MSBuildThisFileDirectory)bin\Release\VisionCore-$(ProductVersion)-Setup-x64.msi</MsiPath>
+    <InstallerPlatform Condition="'$(InstallerPlatform)'==''">x64</InstallerPlatform>
     <Nullable>enable</Nullable>
-    <DefineConstants>MsiPath=$(MsiPath);ProductVersion=$(ProductVersion)</DefineConstants>
+    <DefineConstants>MsiPath=$(MsiPath);ProductVersion=$(ProductVersion);InstallerPlatform=$(InstallerPlatform)</DefineConstants>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <EnableDefaultItems>false</EnableDefaultItems>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(InstallerPlatform)'=='x64'">
+    <WixInstallerPlatform>x64</WixInstallerPlatform>
+    <WixArchitecture>x64</WixArchitecture>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(InstallerPlatform)'=='x86'">
+    <WixInstallerPlatform>x86</WixInstallerPlatform>
+    <WixArchitecture>x86</WixArchitecture>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="WixToolset.Bal.wixext" Version="4.0.6"/>
     <PackageReference Include="WixToolset.Util.wixext" Version="4.0.6"/>
+    <PackageReference Include="WixToolset.Netfx.wixext" Version="4.0.6"/>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Bundle.wxs"/>
