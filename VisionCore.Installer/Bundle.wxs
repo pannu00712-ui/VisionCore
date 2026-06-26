@@ -44,7 +44,6 @@
         RepairArguments="/repair /quiet /norestart"
         UninstallArguments="/uninstall /quiet /norestart"
         Compressed="no"
-        SuppressSignatureValidation="yes"
         PerMachine="yes"
         Vital="yes" />
 
