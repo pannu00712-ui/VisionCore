@@ -1,8 +1,5 @@
-name: Build VisionCore Installers
+﻿name: Build VisionCore Installers
 
-# Trigger:
-#  - On every push of a version tag (e.g. v1.0.0, v1.0.1) -> builds AND publishes a GitHub Release
-#  - Manually from the Actions tab (workflow_dispatch) -> builds only, uploads as artifacts
 on:
   push:
     tags:
@@ -15,7 +12,7 @@ on:
         default: '1.0.9'
 
 permissions:
-  contents: write   # needed to create GitHub Releases
+  contents: write
 
 jobs:
   build:
@@ -23,11 +20,9 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      # ── 1. Checkout source ──────────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ── 2. Determine version number ─────────────────────────────────────
       - name: Resolve version
         id: version
         shell: pwsh
@@ -40,26 +35,22 @@ jobs:
           echo "VERSION=$ver" >> $env:GITHUB_ENV
           echo "Resolved version: $ver"
 
-      # ── 3. Setup .NET 8 SDK ──────────────────────────────────────────────
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      # ── 4. Install WiX toolset + extensions ──────────────────────────────
       - name: Install WiX
         run: |
-          dotnet tool install --global wix --version 4.0.5
+          dotnet tool install --global wix --version 4.0.6
           wix extension add WixToolset.UI.wixext       --global
           wix extension add WixToolset.Util.wixext     --global
           wix extension add WixToolset.Firewall.wixext --global
           wix extension add WixToolset.Bal.wixext      --global
 
-      # ── 5. Restore solution ──────────────────────────────────────────────
       - name: Restore NuGet packages
         run: dotnet restore VisionCore.sln
 
-      # ── 6. Publish x64 (WPF + Service) ──────────────────────────────────
       - name: Publish WPF (x64)
         run: >
           dotnet publish VisionCore.WPF/VisionCore.WPF.csproj
@@ -76,7 +67,81 @@ jobs:
           /p:DebugType=none /p:DebugSymbols=false /p:PublishSingleFile=false
           /p:Version=${{ env.VERSION }}
 
-      # ── 7. Publish x86 (WPF + Service) ──────────────────────────────────
+      -
+
+
+cd "C:\Users\annu\Downloads\VisionCore"
+
+@'
+name: Build VisionCore Installers
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g. 1.0.9)'
+        required: true
+        default: '1.0.9'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build x64 + x86 installers
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "push") {
+            $ver = "${{ github.ref_name }}" -replace '^v', ''
+          } else {
+            $ver = "${{ github.event.inputs.version }}"
+          }
+          echo "VERSION=$ver" >> $env:GITHUB_ENV
+          echo "Resolved version: $ver"
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install WiX
+        run: |
+          dotnet tool install --global wix --version 4.0.6
+          wix extension add WixToolset.UI.wixext       --global
+          wix extension add WixToolset.Util.wixext     --global
+          wix extension add WixToolset.Firewall.wixext --global
+          wix extension add WixToolset.Bal.wixext      --global
+
+      - name: Restore NuGet packages
+        run: dotnet restore VisionCore.sln
+
+      - name: Publish WPF (x64)
+        run: >
+          dotnet publish VisionCore.WPF/VisionCore.WPF.csproj
+          -c Release -r win-x64 --self-contained false
+          -o publish/x64/app
+          /p:DebugType=none /p:DebugSymbols=false /p:PublishSingleFile=false
+          /p:Version=${{ env.VERSION }}
+
+      - name: Publish Service (x64)
+        run: >
+          dotnet publish VisionCore.Service/VisionCore.Service.csproj
+          -c Release -r win-x64 --self-contained false
+          -o publish/x64/service
+          /p:DebugType=none /p:DebugSymbols=false /p:PublishSingleFile=false
+          /p:Version=${{ env.VERSION }}
+
       - name: Publish WPF (x86)
         run: >
           dotnet publish VisionCore.WPF/VisionCore.WPF.csproj
@@ -93,7 +158,6 @@ jobs:
           /p:DebugType=none /p:DebugSymbols=false /p:PublishSingleFile=false
           /p:Version=${{ env.VERSION }}
 
-      # ── 8. Build x64 installer (.msi) ────────────────────────────────────
       - name: Build x64 installer
         run: >
           dotnet build VisionCore.Installer/VisionCore.Installer.csproj
@@ -103,7 +167,6 @@ jobs:
           /p:ProductVersion=${{ env.VERSION }}
           /p:InstallerPlatform=x64
 
-      # ── 8b. Build x64 bundle (.exe — depends on the x64 MSI above) ───────
       - name: Build x64 bundle
         run: >
           dotnet build VisionCore.Installer/VisionCore.Bundle.csproj
@@ -112,7 +175,6 @@ jobs:
           /p:OutputName=VisionCore-${{ env.VERSION }}-Setup-x64
           /p:ProductVersion=${{ env.VERSION }}
 
-      # ── 9. Build x86 installer (.msi) ────────────────────────────────────
       - name: Build x86 installer
         run: >
           dotnet build VisionCore.Installer/VisionCore.Installer.csproj
@@ -122,7 +184,6 @@ jobs:
           /p:ProductVersion=${{ env.VERSION }}
           /p:InstallerPlatform=x86
 
-      # ── 9b. Build x86 bundle (.exe — depends on the x86 MSI above) ───────
       - name: Build x86 bundle
         run: >
           dotnet build VisionCore.Installer/VisionCore.Bundle.csproj
@@ -131,7 +192,6 @@ jobs:
           /p:OutputName=VisionCore-${{ env.VERSION }}-Setup-x86
           /p:ProductVersion=${{ env.VERSION }}
 
-      # ── 10. Collect installer output files ───────────────────────────────
       - name: Collect installer files
         id: collect
         shell: pwsh
@@ -141,7 +201,6 @@ jobs:
             Copy-Item -Destination artifacts -Force
           Get-ChildItem artifacts | Format-Table Name, Length
 
-      # ── 11. Upload as build artifacts (always — visible in Actions tab) ──
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -149,7 +208,6 @@ jobs:
           path: artifacts/*
           retention-days: 30
 
-      # ── 12. Create GitHub Release (only on tag push) ─────────────────────
       - name: Create GitHub Release
         if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
