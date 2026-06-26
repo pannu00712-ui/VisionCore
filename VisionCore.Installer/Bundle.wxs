@@ -1,6 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
-     xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal">
+     xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal"
+     xmlns:netfx="http://wixtoolset.org/schemas/v4/wxs/netfx">
+
   <Bundle
     Name="VisionCore"
     Version="$(var.ProductVersion)"
@@ -8,18 +10,40 @@
     UpgradeCode="F5B8D3C2-9E4A-4F7B-A0D1-23E4F6A8B902"
     IconSourceFile="Assets\setup-icon.ico"
     DisableModify="button">
+
     <BootstrapperApplication>
       <bal:WixStandardBootstrapperApplication
         LicenseUrl=""
         Theme="hyperlinkLicense"
         ShowVersion="yes" />
     </BootstrapperApplication>
+
     <Variable Name="INSTALL_SERVICE"           Type="numeric" Value="1" />
     <Variable Name="AUTOSTART_SERVICE"         Type="numeric" Value="1" />
     <Variable Name="ADD_FIREWALL_RULE"         Type="numeric" Value="1" />
     <Variable Name="CREATE_DESKTOP_SHORTCUT"   Type="numeric" Value="1" />
     <Variable Name="CREATE_STARTMENU_SHORTCUT" Type="numeric" Value="1" />
+
+    <!-- Detects ANY installed .NET 8.x Windows Desktop Runtime (matching
+         architecture). WiX v4 requires a build-time-known Hash/Size for any
+         ExePackage payload that isn't bundled locally (via ExePackagePayload),
+         which would mean pinning an exact .NET patch version - and that pin
+         goes stale (and breaks builds) every time Microsoft ships a new 8.0.x
+         patch. Rather than fight that churn, we surface a single clear
+         message at the Bundle level and stop before the MSI ever runs, so
+         the user sees one friendly explanation instead of the Bundle
+         launching successfully only for the MSI to then reject with a
+         cryptic Windows Installer error code. -->
+    <netfx:DotNetCoreSearch
+      RuntimeType="desktop"
+      MajorVersion="8"
+      Platform="$(var.NetfxPlatform)"
+      Variable="DOTNET8_DESKTOP_VERSION" />
+
+    <bal:Condition Message="VisionCore requires the .NET 8 Desktop Runtime, which was not found on this computer. Download and install it from https://dotnet.microsoft.com/download/dotnet/8.0 (choose the &quot;.NET Desktop Runtime&quot; installer for your system), then run this setup again.">DOTNET8_DESKTOP_VERSION</bal:Condition>
+
     <Chain DisableRollback="no">
+
       <MsiPackage
         Id="VisionCoreMsi"
         SourceFile="$(var.MsiPath)"
@@ -32,6 +56,9 @@
         <MsiProperty Name="CREATE_DESKTOP_SHORTCUT"   Value="[CREATE_DESKTOP_SHORTCUT]" />
         <MsiProperty Name="CREATE_STARTMENU_SHORTCUT" Value="[CREATE_STARTMENU_SHORTCUT]" />
       </MsiPackage>
+
     </Chain>
+
   </Bundle>
+
 </Wix>
