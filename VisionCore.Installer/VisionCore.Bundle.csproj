@@ -1,4 +1,4 @@
-﻿<Project Sdk="WixToolset.Sdk/4.0.5">
+﻿<Project Sdk="WixToolset.Sdk/4.0.6">
   <PropertyGroup>
     <OutputType>Bundle</OutputType>
     <ProductName>VisionCore</ProductName>
@@ -12,8 +12,8 @@
     <EnableDefaultItems>false</EnableDefaultItems>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="WixToolset.Bal.wixext" Version="4.0.5"/>
-    <PackageReference Include="WixToolset.Util.wixext" Version="4.0.5"/>
+    <PackageReference Include="WixToolset.Bal.wixext" Version="4.0.6"/>
+    <PackageReference Include="WixToolset.Util.wixext" Version="4.0.6"/>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Bundle.wxs"/>

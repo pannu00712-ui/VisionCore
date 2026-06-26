@@ -1,4 +1,4 @@
-﻿<Project Sdk="WixToolset.Sdk/4.0.5">
+﻿<Project Sdk="WixToolset.Sdk/4.0.6">
   <PropertyGroup>
     <ProductName>VisionCore</ProductName>
     <ProductVersion Condition="'$(ProductVersion)'==''">1.0.0</ProductVersion>
@@ -21,9 +21,9 @@
     <WixArchitecture>x86</WixArchitecture>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="WixToolset.UI.wixext"       Version="4.0.5"/>
-    <PackageReference Include="WixToolset.Util.wixext"     Version="4.0.5"/>
-    <PackageReference Include="WixToolset.Firewall.wixext" Version="4.0.5"/>
+    <PackageReference Include="WixToolset.UI.wixext"       Version="4.0.6"/>
+    <PackageReference Include="WixToolset.Util.wixext"     Version="4.0.6"/>
+    <PackageReference Include="WixToolset.Firewall.wixext" Version="4.0.6"/>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Package.wxs"/>
