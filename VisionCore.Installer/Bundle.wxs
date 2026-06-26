@@ -13,7 +13,7 @@
 
     <BootstrapperApplication>
       <bal:WixStandardBootstrapperApplication
-        LicenseFile="License.rtf"
+        LicenseUrl=""
         Theme="hyperlinkLicense"
         ShowVersion="yes" />
     </BootstrapperApplication>
@@ -37,13 +37,11 @@
       <ExePackage
         Id="DotNet8Package"
         Name=".NET 8 Windows Desktop Runtime"
-        SourceFile="https://aka.ms/dotnet/8.0/windowsdesktop-runtime-win-x64.exe"
         DownloadUrl="https://aka.ms/dotnet/8.0/windowsdesktop-runtime-win-x64.exe"
         DetectCondition="DotNet8DesktopInstalled"
         InstallArguments="/install /quiet /norestart"
         RepairArguments="/repair /quiet /norestart"
         UninstallArguments="/uninstall /quiet /norestart"
-        Compressed="no"
         PerMachine="yes"
         Vital="yes" />
 
