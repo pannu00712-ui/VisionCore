@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="WixToolset.BootstrapperApplications.wixext" Version="4.0.5"/>
+    <PackageReference Include="WixToolset.Bal.wixext" Version="4.0.5"/>
     <PackageReference Include="WixToolset.Util.wixext" Version="4.0.5"/>
   </ItemGroup>
 

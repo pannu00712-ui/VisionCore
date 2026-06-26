@@ -15,15 +15,14 @@
       <bal:WixStandardBootstrapperApplication
         LicenseFile="License.rtf"
         Theme="hyperlinkLicense"
-        ShowVersion="yes"
-        SuppressOptionsUI="no" />
+        ShowVersion="yes" />
     </BootstrapperApplication>
 
-    <Variable Name="INSTALL_SERVICE"           Type="numeric" Value="1" bal:Overridable="yes" />
-    <Variable Name="AUTOSTART_SERVICE"         Type="numeric" Value="1" bal:Overridable="yes" />
-    <Variable Name="ADD_FIREWALL_RULE"         Type="numeric" Value="1" bal:Overridable="yes" />
-    <Variable Name="CREATE_DESKTOP_SHORTCUT"   Type="numeric" Value="1" bal:Overridable="yes" />
-    <Variable Name="CREATE_STARTMENU_SHORTCUT" Type="numeric" Value="1" bal:Overridable="yes" />
+    <Variable Name="INSTALL_SERVICE"           Type="numeric" Value="1" />
+    <Variable Name="AUTOSTART_SERVICE"         Type="numeric" Value="1" />
+    <Variable Name="ADD_FIREWALL_RULE"         Type="numeric" Value="1" />
+    <Variable Name="CREATE_DESKTOP_SHORTCUT"   Type="numeric" Value="1" />
+    <Variable Name="CREATE_STARTMENU_SHORTCUT" Type="numeric" Value="1" />
 
     <util:RegistrySearch
       Id="SearchDotNet8Desktop"
