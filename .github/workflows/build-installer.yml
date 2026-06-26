@@ -91,14 +91,18 @@ jobs:
           /p:OutputName=VisionCore-${{ env.VERSION }}-Setup-x64
           /p:ProductVersion=${{ env.VERSION }}
           /p:InstallerPlatform=x64
+          /p:IntermediateOutputPath=obj\x64\
+          /p:OutputPath=bin\Release\x64\
 
       - name: Build x64 bundle
         run: >
           dotnet build VisionCore.Installer/VisionCore.Bundle.csproj
           -c Release
-          /p:MsiPath="${{ github.workspace }}\VisionCore.Installer\bin\Release\VisionCore-${{ env.VERSION }}-Setup-x64.msi"
+          /p:MsiPath="${{ github.workspace }}\VisionCore.Installer\bin\Release\x64\VisionCore-${{ env.VERSION }}-Setup-x64.msi"
           /p:OutputName=VisionCore-${{ env.VERSION }}-Setup-x64
           /p:ProductVersion=${{ env.VERSION }}
+          /p:IntermediateOutputPath=obj\x64\
+          /p:OutputPath=bin\Release\x64\
 
       - name: Build x86 installer
         run: >
@@ -108,14 +112,18 @@ jobs:
           /p:OutputName=VisionCore-${{ env.VERSION }}-Setup-x86
           /p:ProductVersion=${{ env.VERSION }}
           /p:InstallerPlatform=x86
+          /p:IntermediateOutputPath=obj\x86\
+          /p:OutputPath=bin\Release\x86\
 
       - name: Build x86 bundle
         run: >
           dotnet build VisionCore.Installer/VisionCore.Bundle.csproj
           -c Release
-          /p:MsiPath="${{ github.workspace }}\VisionCore.Installer\bin\Release\VisionCore-${{ env.VERSION }}-Setup-x86.msi"
+          /p:MsiPath="${{ github.workspace }}\VisionCore.Installer\bin\Release\x86\VisionCore-${{ env.VERSION }}-Setup-x86.msi"
           /p:OutputName=VisionCore-${{ env.VERSION }}-Setup-x86
           /p:ProductVersion=${{ env.VERSION }}
+          /p:IntermediateOutputPath=obj\x86\
+          /p:OutputPath=bin\Release\x86\
 
       - name: Collect installer files
         id: collect
