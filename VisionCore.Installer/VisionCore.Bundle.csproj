@@ -1,5 +1,31 @@
-﻿<Project Sdk="WixToolset.Sdk/4.0.5">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
 
+  <Bundle
+    Name="VisionCore"
+    Version="$(var.ProductVersion)"
+    Manufacturer="VisionCore"
+    UpgradeCode="F5B8D3C2-9E4A-4F7B-A0D1-23E4F6A8B902"
+    IconSourceFile="Assets\setup-icon.ico"
+    DisableModify="button">
+
+    <BootstrapperApplication>
+      <bal:WixStandardBootstrapperApplication
+        LicenseFile="License.rtf"
+git push origin v1.0.9
+git tag v1.0.9
+git push origin --delete v1.0.9
+git tag -d v1.0.9
+git push origin main
+git commit -m "Fix: Bal.wixext 4.0.5, remove Overridable from Bundle.wxs"
+git status
+git add VisionCore.Installer\Bundle.wxs VisionCore.Installer\VisionCore.Bundle.csproj
+quit
+# Force overwrite both files completely
+@'
+<Project Sdk="WixToolset.Sdk/4.0.5">
   <PropertyGroup>
     <OutputType>Bundle</OutputType>
     <ProductName>VisionCore</ProductName>
@@ -12,24 +38,15 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <EnableDefaultItems>false</EnableDefaultItems>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="WixToolset.Bal.wixext" Version="4.0.5"/>
     <PackageReference Include="WixToolset.Util.wixext" Version="4.0.5"/>
   </ItemGroup>
-
   <ItemGroup>
     <Compile Include="Bundle.wxs"/>
   </ItemGroup>
-
   <ItemGroup>
     <Content Include="License.rtf"           CopyToOutputDirectory="PreserveNewest"/>
     <Content Include="Assets\setup-icon.ico" CopyToOutputDirectory="PreserveNewest"/>
   </ItemGroup>
-
-  <Target Name="CheckMsiExists" BeforeTargets="Build">
-    <Warning Condition="!Exists('$(MsiPath)')"
-             Text="MSI not found at $(MsiPath). Build VisionCore.Installer.csproj first."/>
-  </Target>
-
 </Project>
