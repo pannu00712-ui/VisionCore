@@ -23,47 +23,13 @@
 
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
-    <!-- .NET 8 detection: check multiple possible registry locations -->
-    <Property Id="DOTNET8_INSTALLED">
-      <RegistrySearch Id="SearchDotNet8_1" Root="HKLM"
-        Key="SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App"
-        Name="8.0.0" Type="raw" />
-      <RegistrySearch Id="SearchDotNet8_2" Root="HKLM"
-        Key="SOFTWARE\WOW6432Node\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App"
-        Name="8.0.0" Type="raw" />
-      <RegistrySearch Id="SearchDotNet8_3" Root="HKLM"
-        Key="SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.NETCore.App"
-        Name="8.0.0" Type="raw" />
-    </Property>
-
-    <!-- Remove the Launch condition - let installer proceed always -->
-
     <Property Id="INSTALL_SERVICE"           Value="1" />
     <Property Id="AUTOSTART_SERVICE"         Value="1" />
     <Property Id="ADD_FIREWALL_RULE"         Value="1" />
     <Property Id="CREATE_DESKTOP_SHORTCUT"   Value="1" />
     <Property Id="CREATE_STARTMENU_SHORTCUT" Value="1" />
 
-    <InstallExecuteSequence>
-      <Custom Action="StopVisionCoreService"    Before="InstallFiles"            Condition="REMOVE~=&quot;ALL&quot; OR UPGRADINGPRODUCTCODE" />
-      <Custom Action="InstallVisionCoreService" After="InstallFiles"             Condition="INSTALL_SERVICE AND (NOT REMOVE)" />
-      <Custom Action="StartVisionCoreService"   After="InstallVisionCoreService" Condition="AUTOSTART_SERVICE AND INSTALL_SERVICE AND (NOT REMOVE)" />
-      <Custom Action="RemoveVisionCoreService"  Before="RemoveFiles"             Condition="REMOVE~=&quot;ALL&quot; AND (NOT UPGRADINGPRODUCTCODE)" />
-    </InstallExecuteSequence>
-
-    <CustomAction Id="InstallVisionCoreService" Directory="INSTALLDIR_SERVICE"
-      ExeCommand="[SystemFolder]sc.exe create VisionCoreService binPath= &quot;[INSTALLDIR_SERVICE]VisionCore.Service.exe&quot; start= auto DisplayName= &quot;VisionCore Streaming Engine&quot;"
-      Execute="deferred" Impersonate="no" Return="ignore" />
-    <CustomAction Id="StartVisionCoreService" Directory="INSTALLDIR_SERVICE"
-      ExeCommand="[SystemFolder]sc.exe start VisionCoreService"
-      Execute="deferred" Impersonate="no" Return="ignore" />
-    <CustomAction Id="StopVisionCoreService" Directory="INSTALLDIR_SERVICE"
-      ExeCommand="[SystemFolder]sc.exe stop VisionCoreService"
-      Execute="deferred" Impersonate="no" Return="ignore" />
-    <CustomAction Id="RemoveVisionCoreService" Directory="INSTALLDIR_SERVICE"
-      ExeCommand="[SystemFolder]sc.exe delete VisionCoreService"
-      Execute="deferred" Impersonate="no" Return="ignore" />
-
+    <!-- Service install/uninstall via util:ServiceInstall -->
     <Property Id="ARPPRODUCTICON" Value="VisionCoreIcon" />
     <Icon Id="VisionCoreIcon" SourceFile="$(var.SourceDir)\app\VisionCore.WPF.exe" />
 
@@ -80,14 +46,6 @@
           Type="string" Value="[INSTALLDIR]" KeyPath="yes" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="Version"
           Type="string" Value="$(var.ProductVersion)" />
-        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="ServiceName"
-          Type="string" Value="VisionCoreService" />
-      </Component>
-      <Component Id="RegStartWithWindows" Guid="B4D2E3F5-A6C7-8901-BCDE-F01234567891">
-        <RegistryValue Root="HKCU"
-          Key="SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
-          Name="VisionCore" Type="string"
-          Value="[INSTALLDIR_APP]VisionCore.WPF.exe --minimized" KeyPath="yes" />
       </Component>
     </ComponentGroup>
   </Fragment>
