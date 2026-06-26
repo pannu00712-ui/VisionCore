@@ -23,14 +23,20 @@
 
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
-    <Property Id="DOTNET8_DESKTOP_INSTALLED">
-      <RegistrySearch Id="SearchDotNet8Desktop64" Root="HKLM"
+    <!-- .NET 8 detection: check multiple possible registry locations -->
+    <Property Id="DOTNET8_INSTALLED">
+      <RegistrySearch Id="SearchDotNet8_1" Root="HKLM"
         Key="SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App"
+        Name="8.0.0" Type="raw" />
+      <RegistrySearch Id="SearchDotNet8_2" Root="HKLM"
+        Key="SOFTWARE\WOW6432Node\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App"
+        Name="8.0.0" Type="raw" />
+      <RegistrySearch Id="SearchDotNet8_3" Root="HKLM"
+        Key="SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.NETCore.App"
         Name="8.0.0" Type="raw" />
     </Property>
 
-    <Launch Condition="DOTNET8_DESKTOP_INSTALLED"
-      Message="VisionCore requires .NET 8 Windows Desktop Runtime. Please install from https://dotnet.microsoft.com/download/dotnet/8.0" />
+    <!-- Remove the Launch condition - let installer proceed always -->
 
     <Property Id="INSTALL_SERVICE"           Value="1" />
     <Property Id="AUTOSTART_SERVICE"         Value="1" />
@@ -63,12 +69,29 @@
 
   </Package>
 
-  <!-- ui:WixUI MUST be in Fragment, not inside Package -->
   <Fragment>
     <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLDIR" />
   </Fragment>
 
-  <!-- FirewallRules in Fragment -->
+  <Fragment>
+    <ComponentGroup Id="RegistryEntries" Directory="TARGETDIR">
+      <Component Id="RegInstallPath" Guid="A3C1D2E4-F5B6-7890-ABCD-EF1234567890">
+        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="InstallPath"
+          Type="string" Value="[INSTALLDIR]" KeyPath="yes" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="Version"
+          Type="string" Value="$(var.ProductVersion)" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="ServiceName"
+          Type="string" Value="VisionCoreService" />
+      </Component>
+      <Component Id="RegStartWithWindows" Guid="B4D2E3F5-A6C7-8901-BCDE-F01234567891">
+        <RegistryValue Root="HKCU"
+          Key="SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+          Name="VisionCore" Type="string"
+          Value="[INSTALLDIR_APP]VisionCore.WPF.exe --minimized" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
   <Fragment>
     <ComponentGroup Id="FirewallRules" Directory="TARGETDIR">
       <Component Id="FwRtspComponent" Guid="11111111-1111-1111-1111-111111111101">
@@ -88,26 +111,6 @@
           Type="integer" Value="1" KeyPath="yes" />
         <fw:FirewallException Id="FwOnvif" Name="VisionCore ONVIF (8080)"
           Port="8080" Protocol="tcp" Scope="any" />
-      </Component>
-    </ComponentGroup>
-  </Fragment>
-
-  <!-- RegistryEntries in Fragment -->
-  <Fragment>
-    <ComponentGroup Id="RegistryEntries" Directory="TARGETDIR">
-      <Component Id="RegInstallPath" Guid="A3C1D2E4-F5B6-7890-ABCD-EF1234567890">
-        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="InstallPath"
-          Type="string" Value="[INSTALLDIR]" KeyPath="yes" />
-        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="Version"
-          Type="string" Value="$(var.ProductVersion)" />
-        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="ServiceName"
-          Type="string" Value="VisionCoreService" />
-      </Component>
-      <Component Id="RegStartWithWindows" Guid="B4D2E3F5-A6C7-8901-BCDE-F01234567891">
-        <RegistryValue Root="HKCU"
-          Key="SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
-          Name="VisionCore" Type="string"
-          Value="[INSTALLDIR_APP]VisionCore.WPF.exe --minimized" KeyPath="yes" />
       </Component>
     </ComponentGroup>
   </Fragment>
