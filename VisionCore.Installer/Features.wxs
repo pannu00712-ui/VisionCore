@@ -10,7 +10,6 @@
         Display="expand" InstallDefault="local" AllowAbsent="no">
         <ComponentGroupRef Id="AppFiles" />
         <ComponentGroupRef Id="RegistryEntries" />
-        <ComponentGroupRef Id="StartMenuDirCleanup" />
       </Feature>
 
       <Feature Id="ServiceFeature" Title="Background Windows Service" Level="1"

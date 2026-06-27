@@ -60,6 +60,29 @@
         <File Id="VisionCoreServiceExeFile"
               Source="$(var.SourceDir)\service\VisionCore.Service.exe"
               KeyPath="yes" />
+        <!-- Native MSI service install/start/stop/remove, replacing the
+             previous raw sc.exe CustomActions. ServiceInstall registers the
+             service; ServiceControl starts it on install and stops+removes
+             it cleanly on uninstall (and on upgrade, since MajorUpgrade's
+             Schedule="afterInstallInitialize" removes the old product after
+             the new one's files are staged, so Stop="both" here covers
+             both ordinary uninstall and the uninstall half of an upgrade). -->
+        <ServiceInstall
+          Id="VisionCoreServiceInstall"
+          Name="VisionCoreService"
+          DisplayName="VisionCore Streaming Engine"
+          Description="Manages RTSP/ONVIF camera streams, motion detection, and the REST API for the VisionCore surveillance platform."
+          Type="ownProcess"
+          Start="auto"
+          ErrorControl="normal"
+          Account="LocalSystem" />
+        <ServiceControl
+          Id="VisionCoreServiceControl"
+          Name="VisionCoreService"
+          Start="install"
+          Stop="both"
+          Remove="uninstall"
+          Wait="yes" />
       </Component>
       <Component Id="AppSettingsJson" Guid="A9C7D8E0-F1B2-3456-0123-456789012346">
         <File Id="AppSettingsJsonFile"

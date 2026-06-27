@@ -29,25 +29,16 @@
     <Property Id="CREATE_DESKTOP_SHORTCUT"   Value="1" />
     <Property Id="CREATE_STARTMENU_SHORTCUT" Value="1" />
 
-    <InstallExecuteSequence>
-      <Custom Action="StopVisionCoreService"    Before="InstallFiles"            Condition="REMOVE~=&quot;ALL&quot; OR UPGRADINGPRODUCTCODE" />
-      <Custom Action="InstallVisionCoreService" After="InstallFiles"             Condition="INSTALL_SERVICE AND (NOT REMOVE)" />
-      <Custom Action="StartVisionCoreService"   After="InstallVisionCoreService" Condition="AUTOSTART_SERVICE AND INSTALL_SERVICE AND (NOT REMOVE)" />
-      <Custom Action="RemoveVisionCoreService"  Before="RemoveFiles"             Condition="REMOVE~=&quot;ALL&quot; AND (NOT UPGRADINGPRODUCTCODE)" />
-    </InstallExecuteSequence>
-
-    <CustomAction Id="InstallVisionCoreService" Directory="INSTALLDIR_SERVICE"
-      ExeCommand="[SystemFolder]sc.exe create VisionCoreService binPath= &quot;[INSTALLDIR_SERVICE]VisionCore.Service.exe&quot; start= auto DisplayName= &quot;VisionCore Streaming Engine&quot;"
-      Execute="deferred" Impersonate="no" Return="ignore" />
-    <CustomAction Id="StartVisionCoreService" Directory="INSTALLDIR_SERVICE"
-      ExeCommand="[SystemFolder]sc.exe start VisionCoreService"
-      Execute="deferred" Impersonate="no" Return="ignore" />
-    <CustomAction Id="StopVisionCoreService" Directory="INSTALLDIR_SERVICE"
-      ExeCommand="[SystemFolder]sc.exe stop VisionCoreService"
-      Execute="deferred" Impersonate="no" Return="ignore" />
-    <CustomAction Id="RemoveVisionCoreService" Directory="INSTALLDIR_SERVICE"
-      ExeCommand="[SystemFolder]sc.exe delete VisionCoreService"
-      Execute="deferred" Impersonate="no" Return="ignore" />
+    <!-- Service install/start/stop/remove is now handled by the native
+         ServiceInstall/ServiceControl elements on the VisionCoreServiceExe
+         component in Directories.wxs, instead of raw sc.exe CustomActions.
+         The previous CustomAction approach (ExeCommand="[SystemFolder]sc.exe...")
+         combined with a Directory attribute meant for Type 34/35 custom
+         actions - a mismatch that could cause the deferred actions to fail
+         at runtime with no useful detail (surfacing only as a generic Burn/
+         Windows Installer error). ServiceInstall/ServiceControl are core MSI
+         elements purpose-built for this and schedule themselves correctly
+         without any manual InstallExecuteSequence authoring. -->
 
     <Property Id="ARPPRODUCTICON" Value="VisionCoreIcon" />
     <Icon Id="VisionCoreIcon" SourceFile="$(var.SourceDir)\app\VisionCore.WPF.exe" />
