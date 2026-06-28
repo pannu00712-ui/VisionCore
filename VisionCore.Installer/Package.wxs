@@ -24,13 +24,15 @@
 
     <Launch Condition="VersionNT &gt;= 603" Message="VisionCore requires Windows 10 or later." />
     <Launch Condition="NOT MsiSystemRebootPending" Message="A system restart is pending. Please restart and run Setup again." />
-    <Launch Condition="DOTNET8_DESKTOP_INSTALLED" Message="VisionCore requires .NET 8 Windows Desktop Runtime. Install from https://dotnet.microsoft.com/download/dotnet/8.0" />
 
+    <!-- .NET 8 Desktop check via folder existence -->
     <Property Id="DOTNET8_DESKTOP_INSTALLED">
-      <RegistrySearch Id="SearchDotNet8Desktop" Root="HKLM"
-        Key="SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App"
-        Name="8.0.28" Type="raw" />
+      <DirectorySearch Id="SearchDotNet8Folder" Path="[ProgramFiles64Folder]dotnet\shared\Microsoft.WindowsDesktop.App" Depth="1">
+        <DirectorySearch Id="SearchDotNet8SubFolder" AssignToProperty="yes" SelectAllSubFolders="no" />
+      </DirectorySearch>
     </Property>
+
+    <Launch Condition="DOTNET8_DESKTOP_INSTALLED" Message="VisionCore requires .NET 8 Windows Desktop Runtime. Install from https://dotnet.microsoft.com/download/dotnet/8.0" />
 
     <Property Id="INSTALLDIR_FROM_REGISTRY">
       <RegistrySearch Id="SearchInstallDir" Root="HKLM"
