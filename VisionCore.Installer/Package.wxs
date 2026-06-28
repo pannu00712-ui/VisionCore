@@ -68,19 +68,23 @@
       ExeCommand="[SystemFolder]sc.exe delete VisionCoreService"
       Execute="deferred" Impersonate="no" Return="ignore" />
 
-    <ComponentGroup Id="RegistryEntries" Directory="TARGETDIR">
-      <Component Id="RegInstallPath" Guid="A3C1D2E4-F5B6-7890-ABCD-EF1234567890">
-        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="InstallPath" Type="string" Value="[INSTALLDIR]" KeyPath="yes" />
-        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="Version"     Type="string" Value="$(var.ProductVersion)" />
-        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="ServiceName" Type="string" Value="VisionCoreService" />
-        <fw:FirewallException Id="FwRtsp"  Name="VisionCore RTSP (8554)"    Port="8554" Protocol="tcp" Scope="any"         IgnoreFailure="yes" />
-        <fw:FirewallException Id="FwRest"  Name="VisionCore REST API (7880)" Port="7880" Protocol="tcp" Scope="localSubnet" IgnoreFailure="yes" />
-        <fw:FirewallException Id="FwOnvif" Name="VisionCore ONVIF (8080)"   Port="8080" Protocol="tcp" Scope="any"         IgnoreFailure="yes" />
-      </Component>
-    </ComponentGroup>
-
     <Property Id="ARPPRODUCTICON" Value="VisionCoreIcon" />
     <Icon Id="VisionCoreIcon" SourceFile="$(var.SourceDir)\app\VisionCore.WPF.exe" />
 
   </Package>
+
+  <!-- RegistryEntries must be in a Fragment, not inside Package -->
+  <Fragment>
+    <ComponentGroup Id="RegistryEntries" Directory="TARGETDIR">
+      <Component Id="RegInstallPath" Guid="A3C1D2E4-F5B6-7890-ABCD-EF1234567890">
+        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="InstallPath"  Type="string" Value="[INSTALLDIR]"              KeyPath="yes" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="Version"      Type="string" Value="$(var.ProductVersion)" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="ServiceName"  Type="string" Value="VisionCoreService" />
+        <fw:FirewallException Id="FwRtsp"  Name="VisionCore RTSP (8554)"     Port="8554" Protocol="tcp" Scope="any"         IgnoreFailure="yes" />
+        <fw:FirewallException Id="FwRest"  Name="VisionCore REST API (7880)" Port="7880" Protocol="tcp" Scope="localSubnet" IgnoreFailure="yes" />
+        <fw:FirewallException Id="FwOnvif" Name="VisionCore ONVIF (8080)"    Port="8080" Protocol="tcp" Scope="any"         IgnoreFailure="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
 </Wix>
