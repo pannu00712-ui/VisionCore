@@ -1,26 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-
   <Fragment>
     <Feature Id="ProductFeature" Title="VisionCore" Level="1"
       ConfigurableDirectory="INSTALLDIR" Display="expand"
       InstallDefault="local" AllowAbsent="no">
-
       <Feature Id="AppFeature" Title="VisionCore Desktop App" Level="1"
         Display="expand" InstallDefault="local" AllowAbsent="no">
         <ComponentGroupRef Id="AppFiles" />
         <ComponentGroupRef Id="RegistryEntries" />
+        <ComponentGroupRef Id="StartMenuDirCleanup" />
       </Feature>
-
       <Feature Id="ServiceFeature" Title="Background Windows Service" Level="1"
         Display="expand" InstallDefault="local" AllowAbsent="yes">
         <Level Value="0" Condition="NOT INSTALL_SERVICE" />
         <ComponentGroupRef Id="ServiceFiles" />
         <ComponentGroupRef Id="DataDir" />
-        <ComponentGroupRef Id="FirewallRules" />
       </Feature>
-
     </Feature>
   </Fragment>
-
 </Wix>
