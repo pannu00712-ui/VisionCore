@@ -48,11 +48,15 @@
       After="AppSearch" Sequence="execute" Condition="INSTALLDIR_FROM_REGISTRY" />
 
     <InstallExecuteSequence>
-      <Custom Action="StopVisionCoreService"    Before="InstallFiles" Condition="(NOT UPGRADINGPRODUCTCODE) AND (REMOVE~=&quot;ALL&quot;)" />
-      <Custom Action="StopVisionCoreService"    Before="InstallFiles" Condition="UPGRADINGPRODUCTCODE" />
-      <Custom Action="InstallVisionCoreService" After="InstallFiles"  Condition="INSTALL_SERVICE AND (NOT REMOVE)" />
-      <Custom Action="StartVisionCoreService"   After="InstallVisionCoreService" Condition="AUTOSTART_SERVICE AND INSTALL_SERVICE AND (NOT REMOVE)" />
-      <Custom Action="RemoveVisionCoreService"  Before="RemoveFiles"  Condition="REMOVE~=&quot;ALL&quot; AND (NOT UPGRADINGPRODUCTCODE)" />
+      <Custom Action="StopVisionCoreService"    Before="InstallFiles"
+              Condition="((NOT UPGRADINGPRODUCTCODE) AND (REMOVE~=&quot;ALL&quot;)) OR UPGRADINGPRODUCTCODE"
+              Overridable="yes" />
+      <Custom Action="InstallVisionCoreService" After="InstallFiles"
+              Condition="INSTALL_SERVICE AND (NOT REMOVE)" />
+      <Custom Action="StartVisionCoreService"   After="InstallVisionCoreService"
+              Condition="AUTOSTART_SERVICE AND INSTALL_SERVICE AND (NOT REMOVE)" />
+      <Custom Action="RemoveVisionCoreService"  Before="RemoveFiles"
+              Condition="REMOVE~=&quot;ALL&quot; AND (NOT UPGRADINGPRODUCTCODE)" />
     </InstallExecuteSequence>
 
     <CustomAction Id="InstallVisionCoreService" Directory="INSTALLDIR_SERVICE"
@@ -73,11 +77,10 @@
 
   </Package>
 
-  <!-- RegistryEntries must be in a Fragment, not inside Package -->
   <Fragment>
     <ComponentGroup Id="RegistryEntries" Directory="TARGETDIR">
       <Component Id="RegInstallPath" Guid="A3C1D2E4-F5B6-7890-ABCD-EF1234567890">
-        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="InstallPath"  Type="string" Value="[INSTALLDIR]"              KeyPath="yes" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="InstallPath"  Type="string" Value="[INSTALLDIR]"          KeyPath="yes" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="Version"      Type="string" Value="$(var.ProductVersion)" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="ServiceName"  Type="string" Value="VisionCoreService" />
         <fw:FirewallException Id="FwRtsp"  Name="VisionCore RTSP (8554)"     Port="8554" Protocol="tcp" Scope="any"         IgnoreFailure="yes" />
