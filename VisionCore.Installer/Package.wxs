@@ -22,7 +22,7 @@
 
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
-    <Launch Condition="VersionNT &gt;= 1000" Message="VisionCore requires Windows 10 or later." />
+    <Launch Condition="VersionNT &gt;= 603" Message="VisionCore requires Windows 10 or later." />
     <Launch Condition="NOT MsiSystemRebootPending" Message="A system restart is pending. Please restart and run Setup again." />
     <Launch Condition="DOTNET8_DESKTOP_INSTALLED" Message="VisionCore requires .NET 8 Windows Desktop Runtime. Install from https://dotnet.microsoft.com/download/dotnet/8.0" />
 
