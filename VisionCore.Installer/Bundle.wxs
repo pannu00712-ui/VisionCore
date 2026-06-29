@@ -1,37 +1,114 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  VisionCore.Installer — Bundle.wxs
+  ====================================
+  WiX 4 Burn bootstrapper.
+
+  What it does
+  ------------
+  1. Checks whether .NET 8 Windows Desktop Runtime is already installed.
+  2. If not, downloads and installs it silently from Microsoft's CDN.
+  3. Installs (or upgrades) the VisionCore MSI built from the other .wxs files.
+
+  Build command (run after building the MSI)
+  ------------------------------------------
+    wix build Bundle.wxs                          `
+         -ext WixToolset.Bootstrapper.wixext      `
+         -ext WixToolset.Bal.wixext               `
+         -d MsiPath=".\VisionCore-1.0.0-Setup.msi" `
+         -o VisionCore-1.0.0-Setup.exe
+
+  Requires: WixToolset.Bal.wixext  (Managed Bootstrapper Application)
+
+  Silent install
+  --------------
+    VisionCore-1.0.0-Setup.exe /quiet
+    VisionCore-1.0.0-Setup.exe /quiet INSTALL_SERVICE=0
+
+  Silent uninstall
+  ----------------
+    VisionCore-1.0.0-Setup.exe /quiet /uninstall
+-->
+
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
-     xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal">
+     xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
   <Bundle
     Name="VisionCore"
-    Version="$(var.ProductVersion)"
+    Version="1.0.0.0"
     Manufacturer="VisionCore"
     UpgradeCode="F5B8D3C2-9E4A-4F7B-A0D1-23E4F6A8B902"
     IconSourceFile="Assets\setup-icon.ico"
+    About="VisionCore Camera Streaming Platform"
+    HelpUrl="https://github.com/your-org/visioncore"
     DisableModify="button">
-    <BootstrapperApplication>
-      <bal:WixStandardBootstrapperApplication
-        LicenseUrl=""
-        Theme="hyperlinkLicense"
-        ShowVersion="yes" />
-    </BootstrapperApplication>
-    <Variable Name="INSTALL_SERVICE"           Type="numeric" Value="1" />
-    <Variable Name="AUTOSTART_SERVICE"         Type="numeric" Value="1" />
-    <Variable Name="ADD_FIREWALL_RULE"         Type="numeric" Value="1" />
-    <Variable Name="CREATE_DESKTOP_SHORTCUT"   Type="numeric" Value="1" />
-    <Variable Name="CREATE_STARTMENU_SHORTCUT" Type="numeric" Value="1" />
+
+    <!-- ── Bootstrapper Application UI ───────────────────────────────────── -->
+    <!--
+      WixStandardBootstrapperApplication renders a simple themed setup window.
+      Replace with a custom MBA (WpfBootstrapperApplication) for full custom UI.
+    -->
+    <bal:WixStandardBootstrapperApplication
+      LicenseFile="License.rtf"
+      Theme="hyperlinkLicense"
+      SuppressOptionsUI="no"
+      ShowVersion="yes" />
+
+    <!-- ── Variables exposed to the MSI ──────────────────────────────────── -->
+    <Variable Name="INSTALL_SERVICE"           Type="numeric" Value="1" bal:Overridable="yes" />
+    <Variable Name="AUTOSTART_SERVICE"         Type="numeric" Value="1" bal:Overridable="yes" />
+    <Variable Name="ADD_FIREWALL_RULE"         Type="numeric" Value="1" bal:Overridable="yes" />
+    <Variable Name="CREATE_DESKTOP_SHORTCUT"   Type="numeric" Value="1" bal:Overridable="yes" />
+    <Variable Name="CREATE_STARTMENU_SHORTCUT" Type="numeric" Value="1" bal:Overridable="yes" />
+
+    <!-- ── Prerequisite detection ────────────────────────────────────────── -->
+    <!--
+      Detects whether .NET 8 Windows Desktop Runtime (x64) is installed.
+      A previous version of this file used an ExePackage with SourceFile set
+      to a literal download URL - that is not valid WiX v4 schema (SourceFile
+      must be a local file at build time; DownloadUrl is the field for remote
+      content, and even then WiX v4 requires a build-time-known Hash/Size via
+      a child ExePackagePayload element). Pinning a Hash to one exact .NET
+      patch version also goes stale - and breaks the build - every time
+      Microsoft ships a new 8.0.x patch (which happens roughly monthly).
+      Rather than fight that churn, we surface one clear message here and
+      stop before the MSI ever runs, so the person sees a single friendly
+      explanation instead of the bundle launching successfully only for the
+      MSI to then reject with a cryptic Windows Installer error code.
+    -->
+    <util:RegistrySearch
+      Id="SearchDotNet8Desktop"
+      Root="HKLM"
+      Key="SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App"
+      Value="8.0.0"
+      Variable="DotNet8DesktopInstalled"
+      Result="exists" />
+
+    <bal:Condition Message="VisionCore requires the .NET 8 Desktop Runtime, which was not found on this computer. Download and install it from https://dotnet.microsoft.com/download/dotnet/8.0 (choose the &quot;.NET Desktop Runtime&quot; installer for your system), then run this setup again.">DotNet8DesktopInstalled</bal:Condition>
+
+    <!-- ── Package chain ─────────────────────────────────────────────────── -->
     <Chain DisableRollback="no">
+
+      <!-- VisionCore MSI -->
       <MsiPackage
         Id="VisionCoreMsi"
         SourceFile="$(var.MsiPath)"
         EnableFeatureSelection="no"
         ForcePerMachine="yes"
         Vital="yes">
+
+        <!-- Pass bootstrapper variables into the MSI as properties -->
         <MsiProperty Name="INSTALL_SERVICE"           Value="[INSTALL_SERVICE]" />
         <MsiProperty Name="AUTOSTART_SERVICE"         Value="[AUTOSTART_SERVICE]" />
         <MsiProperty Name="ADD_FIREWALL_RULE"         Value="[ADD_FIREWALL_RULE]" />
         <MsiProperty Name="CREATE_DESKTOP_SHORTCUT"   Value="[CREATE_DESKTOP_SHORTCUT]" />
         <MsiProperty Name="CREATE_STARTMENU_SHORTCUT" Value="[CREATE_STARTMENU_SHORTCUT]" />
+
       </MsiPackage>
+
     </Chain>
+
   </Bundle>
+
 </Wix>

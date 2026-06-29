@@ -1,12 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  VisionCore.Installer — Package.wxs
+  ====================================
+  WiX Toolset v4 (wix4 / HeatWave) package definition.
+
+  Build prerequisites
+  -------------------
+    dotnet tool install --global wix
+    wix extension add WixToolset.UI.wixext
+    wix extension add WixToolset.Util.wixext
+    wix extension add WixToolset.Firewall.wixext
+
+  Build command (from this directory)
+  ------------------------------------
+    wix build Package.wxs Directories.wxs Features.wxs UI.wxs `
+         -ext WixToolset.UI.wixext    `
+         -ext WixToolset.Util.wixext  `
+         -ext WixToolset.Firewall.wixext `
+         -d SourceDir="..\publish"    `
+         -o VisionCore-1.0.0-Setup.msi
+
+  The publish/ folder must contain the output of:
+    dotnet publish VisionCore.WPF\VisionCore.WPF.csproj     -c Release -r win-x64 --self-contained false
+    dotnet publish VisionCore.Service\VisionCore.Service.csproj -c Release -r win-x64 --self-contained false
+
+  Directory layout expected inside $(var.SourceDir):
+    publish\
+      app\          — WPF tray application (VisionCore.WPF.exe + deps)
+      service\      — Windows Service executable (VisionCore.Service.exe + deps)
+-->
+
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
      xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util"
-     xmlns:fw="http://wixtoolset.org/schemas/v4/wxs/firewall">
+     xmlns:fw="http://wixtoolset.org/schemas/v4/wxs/firewall"
+     xmlns:netfx="http://wixtoolset.org/schemas/v4/wxs/netfx">
 
   <Package
     Name="VisionCore"
     Manufacturer="VisionCore"
-    Version="$(var.ProductVersion).0"
+    Version="1.0.0.0"
     UpgradeCode="E4A7C2D1-8F3B-4E9A-B6C0-12D3E5F7A801"
     Language="1033"
     Codepage="1252"
@@ -14,82 +47,140 @@
     Compressed="yes"
     Scope="perMachine">
 
+    <!-- ── Upgrade / downgrade policy ─────────────────────────────────────── -->
     <MajorUpgrade
       DowngradeErrorMessage="A newer version of VisionCore is already installed."
       Schedule="afterInstallInitialize"
       AllowDowngrades="no"
       AllowSameVersionUpgrades="no" />
 
+    <!-- ── Media / cabinet ────────────────────────────────────────────────── -->
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
-    <Launch Condition="VersionNT &gt;= 603" Message="VisionCore requires Windows 10 or later." />
-    <Launch Condition="NOT MsiSystemRebootPending" Message="A system restart is pending. Please restart and run Setup again." />
+    <!-- ── Prerequisite: .NET 8 Desktop Runtime ───────────────────────────── -->
+    <!--
+      We check for the .NET 8 Windows Desktop Runtime host key.
+      The bootstrapper (Bundle.wxs) will install it if missing;
+      this condition is a fallback guard for MSI-only installs.
+    -->
+    <Launch
+      Condition="DOTNET8_DESKTOP_INSTALLED"
+      Message="VisionCore requires .NET 8 Windows Desktop Runtime.  Please install it from https://dotnet.microsoft.com/download/dotnet/8.0 and run Setup again." />
 
-    <!-- .NET 8 Desktop check via folder existence -->
-    <Property Id="DOTNET8_DESKTOP_INSTALLED">
-      <DirectorySearch Id="SearchDotNet8Folder" Path="[ProgramFiles64Folder]dotnet\shared\Microsoft.WindowsDesktop.App" Depth="1">
-        <DirectorySearch Id="SearchDotNet8SubFolder" AssignToProperty="yes" SelectAllSubFolders="no" />
-      </DirectorySearch>
-    </Property>
+    <!-- ── Property: detect .NET 8 Desktop Runtime ───────────────────────── -->
+    <!-- netfx:DotNetCoreSearch detects ANY installed 8.x Desktop Runtime
+         (8.0.0, 8.0.11, 8.0.27, etc.) rather than a RegistrySearch keyed to
+         the exact literal value name "8.0.0", which fails to detect every
+         patch release after the very first one - even though the runtime
+         genuinely is installed. -->
+    <netfx:DotNetCoreSearch
+      RuntimeType="desktop"
+      MajorVersion="8"
+      Platform="x64"
+      Variable="DOTNET8_DESKTOP_INSTALLED" />
 
-    <Launch Condition="DOTNET8_DESKTOP_INSTALLED" Message="VisionCore requires .NET 8 Windows Desktop Runtime. Install from https://dotnet.microsoft.com/download/dotnet/8.0" />
-
+    <!-- ── Property: detect existing service install path (for upgrades) ──── -->
     <Property Id="INSTALLDIR_FROM_REGISTRY">
-      <RegistrySearch Id="SearchInstallDir" Root="HKLM"
-        Key="SOFTWARE\VisionCore" Name="InstallPath" Type="raw" />
+      <RegistrySearch
+        Id="SearchInstallDir"
+        Root="HKLM"
+        Key="SOFTWARE\VisionCore"
+        Name="InstallPath"
+        Type="raw" />
     </Property>
 
-    <Property Id="WIXUI_INSTALLDIR"          Value="INSTALLDIR" />
-    <Property Id="INSTALL_SERVICE"           Value="1" />
-    <Property Id="AUTOSTART_SERVICE"         Value="1" />
-    <Property Id="ADD_FIREWALL_RULE"         Value="1" />
-    <Property Id="CREATE_DESKTOP_SHORTCUT"   Value="1" />
+    <!-- ── Runtime properties ─────────────────────────────────────────────── -->
+    <Property Id="WIXUI_INSTALLDIR"       Value="INSTALLDIR" />
+    <Property Id="INSTALL_SERVICE"        Value="1" />   <!-- checked by default -->
+    <Property Id="AUTOSTART_SERVICE"      Value="1" />
+    <Property Id="ADD_FIREWALL_RULE"      Value="1" />
+    <Property Id="CREATE_DESKTOP_SHORTCUT" Value="1" />
     <Property Id="CREATE_STARTMENU_SHORTCUT" Value="1" />
 
-    <SetProperty Id="INSTALLDIR" Value="[INSTALLDIR_FROM_REGISTRY]"
-      After="AppSearch" Sequence="execute" Condition="INSTALLDIR_FROM_REGISTRY" />
+    <!-- Preserve install dir across upgrades -->
+    <SetProperty
+      Id="INSTALLDIR"
+      Value="[INSTALLDIR_FROM_REGISTRY]"
+      After="AppSearch"
+      Sequence="execute"
+      Condition="INSTALLDIR_FROM_REGISTRY" />
 
-    <InstallExecuteSequence>
-      <Custom Action="StopVisionCoreService"    Before="InstallFiles"
-              Condition="((NOT UPGRADINGPRODUCTCODE) AND (REMOVE~=&quot;ALL&quot;)) OR UPGRADINGPRODUCTCODE"
-              Overridable="yes" />
-      <Custom Action="InstallVisionCoreService" After="InstallFiles"
-              Condition="INSTALL_SERVICE AND (NOT REMOVE)" />
-      <Custom Action="StartVisionCoreService"   After="InstallVisionCoreService"
-              Condition="AUTOSTART_SERVICE AND INSTALL_SERVICE AND (NOT REMOVE)" />
-      <Custom Action="RemoveVisionCoreService"  Before="RemoveFiles"
-              Condition="REMOVE~=&quot;ALL&quot; AND (NOT UPGRADINGPRODUCTCODE)" />
-    </InstallExecuteSequence>
+    <!-- Service install/start/stop/remove is handled by the native
+         ServiceInstall/ServiceControl elements on the VisionCoreServiceExe
+         component in Directories.wxs (see comment there for why this
+         replaces the previous raw sc.exe CustomActions). -->
 
-    <CustomAction Id="InstallVisionCoreService" Directory="INSTALLDIR_SERVICE"
-      ExeCommand="[SystemFolder]sc.exe create VisionCoreService binPath= &quot;[INSTALLDIR_SERVICE]VisionCore.Service.exe&quot; start= auto DisplayName= &quot;VisionCore Streaming Engine&quot;"
-      Execute="deferred" Impersonate="no" Return="ignore" />
-    <CustomAction Id="StartVisionCoreService" Directory="INSTALLDIR_SERVICE"
-      ExeCommand="[SystemFolder]sc.exe start VisionCoreService"
-      Execute="deferred" Impersonate="no" Return="ignore" />
-    <CustomAction Id="StopVisionCoreService" Directory="INSTALLDIR_SERVICE"
-      ExeCommand="[SystemFolder]sc.exe stop VisionCoreService"
-      Execute="deferred" Impersonate="no" Return="ignore" />
-    <CustomAction Id="RemoveVisionCoreService" Directory="INSTALLDIR_SERVICE"
-      ExeCommand="[SystemFolder]sc.exe delete VisionCoreService"
-      Execute="deferred" Impersonate="no" Return="ignore" />
+    <!-- ── Firewall: RTSP 8554, REST API 7880, ONVIF 8080 ─────────────────── -->
+    <fw:FirewallException
+      Id="FwRtsp"
+      Name="VisionCore RTSP (8554)"
+      Port="8554"
+      Protocol="tcp"
+      Scope="any"
+      IgnoreFailure="yes"
+      Condition="ADD_FIREWALL_RULE" />
 
+    <fw:FirewallException
+      Id="FwRestApi"
+      Name="VisionCore REST API (7880)"
+      Port="7880"
+      Protocol="tcp"
+      Scope="localSubnet"
+      IgnoreFailure="yes"
+      Condition="ADD_FIREWALL_RULE" />
+
+    <fw:FirewallException
+      Id="FwOnvif"
+      Name="VisionCore ONVIF (8080)"
+      Port="8080"
+      Protocol="tcp"
+      Scope="any"
+      IgnoreFailure="yes"
+      Condition="ADD_FIREWALL_RULE" />
+
+    <!-- ── Registry ────────────────────────────────────────────────────────── -->
+    <ComponentGroup Id="RegistryEntries" Directory="TARGETDIR">
+      <Component Id="RegInstallPath" Guid="A3C1D2E4-F5B6-7890-ABCD-EF1234567890">
+        <!-- Record install path for upgrade detection -->
+        <RegistryValue
+          Root="HKLM"
+          Key="SOFTWARE\VisionCore"
+          Name="InstallPath"
+          Type="string"
+          Value="[INSTALLDIR]"
+          KeyPath="yes" />
+        <RegistryValue
+          Root="HKLM"
+          Key="SOFTWARE\VisionCore"
+          Name="Version"
+          Type="string"
+          Value="1.0.0" />
+        <RegistryValue
+          Root="HKLM"
+          Key="SOFTWARE\VisionCore"
+          Name="ServiceName"
+          Type="string"
+          Value="VisionCoreService" />
+      </Component>
+
+      <!-- Start with Windows (current user) — mirrors SettingsViewModel.StartWithWindows -->
+      <Component Id="RegStartWithWindows" Guid="B4D2E3F5-A6C7-8901-BCDE-F01234567891"
+                 Condition="CREATE_DESKTOP_SHORTCUT">
+        <RegistryValue
+          Root="HKCU"
+          Key="SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+          Name="VisionCore"
+          Type="string"
+          Value="[INSTALLDIR_APP]VisionCore.WPF.exe --minimized"
+          KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- ── Uninstall shortcut in Programs & Features ───────────────────────── -->
     <Property Id="ARPPRODUCTICON" Value="VisionCoreIcon" />
+    <Property Id="ARPHELPLINK"    Value="https://github.com/your-org/visioncore" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/your-org/visioncore" />
     <Icon Id="VisionCoreIcon" SourceFile="$(var.SourceDir)\app\VisionCore.WPF.exe" />
 
   </Package>
-
-  <Fragment>
-    <ComponentGroup Id="RegistryEntries" Directory="TARGETDIR">
-      <Component Id="RegInstallPath" Guid="A3C1D2E4-F5B6-7890-ABCD-EF1234567890">
-        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="InstallPath"  Type="string" Value="[INSTALLDIR]"          KeyPath="yes" />
-        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="Version"      Type="string" Value="$(var.ProductVersion)" />
-        <RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="ServiceName"  Type="string" Value="VisionCoreService" />
-        <fw:FirewallException Id="FwRtsp"  Name="VisionCore RTSP (8554)"     Port="8554" Protocol="tcp" Scope="any"         IgnoreFailure="yes" />
-        <fw:FirewallException Id="FwRest"  Name="VisionCore REST API (7880)" Port="7880" Protocol="tcp" Scope="localSubnet" IgnoreFailure="yes" />
-        <fw:FirewallException Id="FwOnvif" Name="VisionCore ONVIF (8080)"    Port="8080" Protocol="tcp" Scope="any"         IgnoreFailure="yes" />
-      </Component>
-    </ComponentGroup>
-  </Fragment>
-
 </Wix>

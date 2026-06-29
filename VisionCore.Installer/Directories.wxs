@@ -22,7 +22,8 @@
   empty directories so the service account has write permission.
 -->
 
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
 
   <!-- ══════════════════════════════════════════════════════════════════════
        Directory tree
@@ -143,12 +144,45 @@
   <Fragment>
     <ComponentGroup Id="ServiceFiles" Directory="INSTALLDIR_SERVICE">
 
-      <!-- Main service executable — referenced by sc.exe custom actions -->
+      <!-- Main service executable, with native MSI service registration.
+           ServiceInstall declares the service; ServiceControl starts it on
+           install and stops+removes it on uninstall/upgrade. This replaces
+           the previous raw sc.exe CustomActions in Package.wxs, which used
+           a Directory attribute (meant for Type 34/35 custom actions whose
+           target executable lives inside that directory) together with an
+           ExeCommand that was already an absolute [SystemFolder] path - a
+           mismatch that could make the deferred action fail unpredictably,
+           surfacing only as a generic Windows Installer/Burn error code
+           with no further detail.
+           Wait="no" on ServiceControl is deliberate: a slow or even a
+           failing first service start (the very first run does real work -
+           creating the SQLite settings DB, checking/downloading MediaMTX,
+           binding several ports) must not roll back the entire MSI install.
+           Installation success here means "files copied, service
+           registered" - not "service's first boot finished inside an
+           arbitrary MSI timeout". The service can always be started
+           afterwards from Services.msc if its first attempt is slow. -->
       <Component Id="VisionCoreServiceExe" Guid="F8B6C7D9-E0A1-2345-F012-345678901235">
         <File
           Id="VisionCoreServiceExeFile"
           Source="$(var.SourceDir)\service\VisionCore.Service.exe"
           KeyPath="yes" />
+        <ServiceInstall
+          Id="VisionCoreServiceInstall"
+          Name="VisionCoreService"
+          DisplayName="VisionCore Streaming Engine"
+          Description="Manages RTSP/ONVIF camera streams, motion detection, and the REST API for the VisionCore surveillance platform."
+          Type="ownProcess"
+          Start="auto"
+          ErrorControl="normal"
+          Account="LocalSystem" />
+        <ServiceControl
+          Id="VisionCoreServiceControl"
+          Name="VisionCoreService"
+          Start="install"
+          Stop="both"
+          Remove="uninstall"
+          Wait="no" />
       </Component>
 
       <!-- appsettings.json — installed once, never overwritten on upgrade
