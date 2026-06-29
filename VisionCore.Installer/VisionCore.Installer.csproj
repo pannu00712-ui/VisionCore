@@ -8,7 +8,7 @@
       VisionCore-1.0.0-Setup.exe   (Burn bootstrapper — .NET 8 prereq + MSI)
 
     Prerequisites (run once):
-      dotnet tool install --global wix
+      dotnet tool install -g wix
       wix extension add WixToolset.UI.wixext
       wix extension add WixToolset.Util.wixext
       wix extension add WixToolset.Firewall.wixext
@@ -16,9 +16,9 @@
 
     Build (from solution root):
       dotnet publish VisionCore.WPF\VisionCore.WPF.csproj -c Release -r win-x64 ^
-             --self-contained false -o publish\app
+             /p:SelfContained=false -o publish\app
       dotnet publish VisionCore.Service\VisionCore.Service.csproj -c Release -r win-x64 ^
-             --self-contained false -o publish\service
+             /p:SelfContained=false -o publish\service
       dotnet build VisionCore.Installer\VisionCore.Installer.csproj -c Release
     ═══════════════════════════════════════════════════════════════════════
   -->
