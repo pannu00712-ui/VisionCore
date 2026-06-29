@@ -5,7 +5,7 @@
   Defines the directory tree and all installed files.
 
   File harvesting
-  ---------------
+  ===============
   The two ComponentGroups at the bottom use the WiX 4 HeatWave approach:
   each <Files> element harvests an entire publish folder recursively, so
   you never have to list binaries, DLLs, or PDB files individually.
@@ -16,7 +16,7 @@
       service\   — output of: dotnet publish VisionCore.Service -c Release -r win-x64
 
   Subdirectory note
-  -----------------
+  =================
   mediamtx\ and ffmpeg\ are NOT harvested here — they are downloaded at
   runtime by MediaMtxDownloader / FindFfmpeg().  The installer creates the
   empty directories so the service account has write permission.

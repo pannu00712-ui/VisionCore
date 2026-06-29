@@ -5,13 +5,13 @@
   WiX 4 Burn bootstrapper.
 
   What it does
-  ------------
+  ============
   1. Checks whether .NET 8 Windows Desktop Runtime is already installed.
   2. If not, downloads and installs it silently from Microsoft's CDN.
   3. Installs (or upgrades) the VisionCore MSI built from the other .wxs files.
 
   Build command (run after building the MSI)
-  ------------------------------------------
+  ==========================================
     wix build Bundle.wxs                          `
          -ext WixToolset.Bootstrapper.wixext      `
          -ext WixToolset.Bal.wixext               `
@@ -21,12 +21,12 @@
   Requires: WixToolset.Bal.wixext  (Managed Bootstrapper Application)
 
   Silent install
-  --------------
+  ==============
     VisionCore-1.0.0-Setup.exe /quiet
     VisionCore-1.0.0-Setup.exe /quiet INSTALL_SERVICE=0
 
   Silent uninstall
-  ----------------
+  ================
     VisionCore-1.0.0-Setup.exe /quiet /uninstall
 -->
 

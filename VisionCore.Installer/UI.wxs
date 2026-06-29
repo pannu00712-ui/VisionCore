@@ -1,9 +1,137 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  VisionCore.Installer — UI.wxs
+  ================================
+  Defines the installer UI using WiX's built-in WixUI_InstallDir dialog
+  set, extended with a custom Options dialog for VisionCore-specific
+  install choices.
+
+  Dialog flow
+  ===========
+  WelcomeDlg → LicenseAgreementDlg → InstallDirDlg → VcOptionsDlg → VerifyReadyDlg → [install] → ExitDlg
+
+  Custom dialog: VcOptionsDlg
+  ===========================
+  Checkboxes exposed to the user:
+    ☑ Install as Windows Service        (INSTALL_SERVICE)
+    ☑ Start service automatically       (AUTOSTART_SERVICE)
+    ☑ Create firewall rules             (ADD_FIREWALL_RULE)
+    ☑ Create desktop shortcut           (CREATE_DESKTOP_SHORTCUT)
+    ☑ Create Start Menu shortcuts       (CREATE_STARTMENU_SHORTCUT)
+
+  Requires: WixToolset.UI.wixext
+-->
+
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
 
   <Fragment>
-    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+
+    <!-- ── Use the built-in InstallDir dialog sequence as the base ──────── -->
+    <ui:WixUI Id="WixUI_VisionCore" InstallDirectory="INSTALLDIR">
+
+      <!--
+        Override the stock dialog sequence to splice in VcOptionsDlg
+        between InstallDirDlg and VerifyReadyDlg.
+      -->
+
+      <!-- From WelcomeDlg → LicenseAgreementDlg (stock) -->
+      <ui:DialogRef Id="WelcomeDlg" />
+      <ui:DialogRef Id="LicenseAgreementDlg" />
+      <ui:DialogRef Id="InstallDirDlg" />
+      <ui:DialogRef Id="VcOptionsDlg" />
+      <ui:DialogRef Id="VerifyReadyDlg" />
+      <ui:DialogRef Id="ExitDlg" />
+      <ui:DialogRef Id="UserExitDlg" />
+      <ui:DialogRef Id="FatalError" />
+      <ui:DialogRef Id="FilesInUse" />
+      <ui:DialogRef Id="MsiRMFilesInUse" />
+      <ui:DialogRef Id="PrepareDlg" />
+      <ui:DialogRef Id="ProgressDlg" />
+      <ui:DialogRef Id="MaintenanceTypeDlg" />
+      <ui:DialogRef Id="MaintenanceWelcomeDlg" />
+
+      <!--
+        Navigation wiring for the custom dialog slot.
+        WixUI_InstallDir defines Back/Next on InstallDirDlg pointing to
+        LicenseAgreementDlg and VerifyReadyDlg respectively.
+        We intercept those to insert VcOptionsDlg in between.
+      -->
+      <ui:Publish Dialog="InstallDirDlg"  Control="Next"    Event="NewDialog" Value="VcOptionsDlg"   Order="3" />
+      <ui:Publish Dialog="VcOptionsDlg"   Control="Back"    Event="NewDialog" Value="InstallDirDlg"  Order="1" />
+      <ui:Publish Dialog="VcOptionsDlg"   Control="Next"    Event="NewDialog" Value="VerifyReadyDlg" Order="1" />
+      <ui:Publish Dialog="VerifyReadyDlg" Control="Back"    Event="NewDialog" Value="VcOptionsDlg"   Order="3"
+                  Condition="NOT Installed" />
+
+      <!-- License file — replace with your actual RTF -->
+      <ui:WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+      <!-- Banner and background bitmaps (185×57 and 493×58 / 493×312) -->
+      <!--
+      <ui:WixVariable Id="WixUIBannerBmp"     Value="Assets\banner.bmp" />
+      <ui:WixVariable Id="WixUIDialogBmp"     Value="Assets\dialog.bmp" />
+      -->
+
+    </ui:WixUI>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         VcOptionsDlg — custom dialog
+         ══════════════════════════════════════════════════════════════════ -->
+
+    <ui:Dialog Id="VcOptionsDlg" Width="370" Height="270" Title="Installation Options">
+
+      <!-- Title banner area -->
+      <ui:Control Id="BannerBitmap"  Type="Bitmap"    X="0"   Y="0"   Width="370" Height="44" TabSkip="no" Text="WixUI_Bmp_Banner" />
+      <ui:Control Id="BannerLine"    Type="Line"      X="0"   Y="44"  Width="370" Height="0" />
+      <ui:Control Id="Title"         Type="Text"      X="15"  Y="8"   Width="200" Height="17" Transparent="yes" NoPrefix="yes">
+        <Text>{\WixUI_Font_Title}Installation Options</Text>
+      </ui:Control>
+      <ui:Control Id="Description"   Type="Text"      X="25"  Y="23"  Width="280" Height="17" Transparent="yes" NoPrefix="yes">
+        <Text>Choose which components are installed and started.</Text>
+      </ui:Control>
+
+      <!-- ── Windows Service group ─────────────────────────────────── -->
+      <ui:Control Id="ServiceGroup"  Type="GroupBox"  X="10"  Y="52"  Width="350" Height="78" Text="Windows Service" />
+
+      <ui:Control Id="ChkService"    Type="CheckBox"  X="20"  Y="66"  Width="300" Height="17"
+                  Property="INSTALL_SERVICE" CheckBoxValue="1">
+        <Text>Install VisionCore as a Windows Service (VisionCoreService)</Text>
+      </ui:Control>
+      <ui:Control Id="ChkAutoStart"  Type="CheckBox"  X="30"  Y="83"  Width="290" Height="17"
+                  Property="AUTOSTART_SERVICE" CheckBoxValue="1">
+        <Text>Start the service automatically after install</Text>
+        <Condition Action="enable">INSTALL_SERVICE</Condition>
+        <Condition Action="disable">NOT INSTALL_SERVICE</Condition>
+      </ui:Control>
+      <ui:Control Id="ChkFirewall"   Type="CheckBox"  X="30"  Y="100" Width="290" Height="17"
+                  Property="ADD_FIREWALL_RULE" CheckBoxValue="1">
+        <Text>Add Windows Firewall rules (RTSP 8554, REST 7880, ONVIF 8080)</Text>
+        <Condition Action="enable">INSTALL_SERVICE</Condition>
+        <Condition Action="disable">NOT INSTALL_SERVICE</Condition>
+      </ui:Control>
+
+      <!-- ── Shortcuts group ───────────────────────────────────────── -->
+      <ui:Control Id="ShortcutsGroup" Type="GroupBox" X="10"  Y="138" Width="350" Height="52" Text="Shortcuts" />
+
+      <ui:Control Id="ChkDesktop"    Type="CheckBox"  X="20"  Y="152" Width="300" Height="17"
+                  Property="CREATE_DESKTOP_SHORTCUT" CheckBoxValue="1">
+        <Text>Create a desktop shortcut</Text>
+      </ui:Control>
+      <ui:Control Id="ChkStartMenu"  Type="CheckBox"  X="20"  Y="169" Width="300" Height="17"
+                  Property="CREATE_STARTMENU_SHORTCUT" CheckBoxValue="1">
+        <Text>Create Start Menu shortcuts</Text>
+      </ui:Control>
+
+      <!-- ── Bottom bar ────────────────────────────────────────────── -->
+      <ui:Control Id="BottomLine"    Type="Line"      X="0"   Y="234" Width="370" Height="0" />
+
+      <ui:Control Id="Back"          Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="&amp;Back" />
+      <ui:Control Id="Next"          Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="&amp;Next" />
+      <ui:Control Id="Cancel"        Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
+        <Publish Event="SpawnDialog" Value="CancelDlg" />
+      </ui:Control>
+
+    </ui:Dialog>
+
   </Fragment>
 
 </Wix>
