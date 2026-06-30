@@ -1,0 +1,69 @@
+<Project Sdk="WixToolset.Sdk/4.0.5">
+
+  <!--
+    ═══════════════════════════════════════════════════════════════════════
+    VisionCore Installer — WiX 4 project
+    Produces:
+      VisionCore-1.0.0-Setup.msi   (MSI — enterprise / GPO)
+      VisionCore-1.0.0-Setup.exe   (Burn bootstrapper — .NET 8 prereq + MSI)
+
+    Prerequisites (run once):
+      dotnet tool install --global wix
+      wix extension add WixToolset.UI.wixext
+      wix extension add WixToolset.Util.wixext
+      wix extension add WixToolset.Firewall.wixext
+      wix extension add WixToolset.Bal.wixext
+
+    Build (from solution root):
+      dotnet publish VisionCore.WPF\VisionCore.WPF.csproj -c Release -r win-x64 ^
+             --self-contained false -o publish\app
+      dotnet publish VisionCore.Service\VisionCore.Service.csproj -c Release -r win-x64 ^
+             --self-contained false -o publish\service
+      dotnet build VisionCore.Installer\VisionCore.Installer.csproj -c Release
+    ═══════════════════════════════════════════════════════════════════════
+  -->
+
+  <PropertyGroup>
+    <ProductName>VisionCore</ProductName>
+    <ProductVersion>1.0.0</ProductVersion>
+    <Manufacturer>VisionCore</Manufacturer>
+    <OutputName>VisionCore-$(ProductVersion)-Setup</OutputName>
+    <!-- Source directory where dotnet publish output is placed -->
+    <SourceDir Condition="'$(SourceDir)'==''">$(MSBuildThisFileDirectory)..\publish</SourceDir>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <!-- ── WiX extensions ─────────────────────────────────────────────────── -->
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext"       Version="4.0.5"/>
+    <PackageReference Include="WixToolset.Util.wixext"     Version="4.0.5"/>
+    <PackageReference Include="WixToolset.Firewall.wixext" Version="4.0.5"/>
+    <PackageReference Include="WixToolset.Bal.wixext"      Version="4.0.5"/>
+  </ItemGroup>
+
+  <!-- ── WiX source files ───────────────────────────────────────────────── -->
+  <ItemGroup>
+    <!-- MSI sources -->
+    <Compile Include="Package.wxs"/>
+    <Compile Include="Directories.wxs"/>
+    <Compile Include="Features.wxs"/>
+    <Compile Include="UI.wxs"/>
+    <!-- Burn bundle (produces the .exe bootstrapper) -->
+    <Compile Include="Bundle.wxs"/>
+  </ItemGroup>
+
+  <!-- ── Embedded assets ────────────────────────────────────────────────── -->
+  <ItemGroup>
+    <Content Include="License.rtf"          CopyToOutputDirectory="PreserveNewest"/>
+    <Content Include="Assets\setup-icon.ico" CopyToOutputDirectory="PreserveNewest"/>
+  </ItemGroup>
+
+  <!-- ── Pre-build: verify publish outputs exist ────────────────────────── -->
+  <Target Name="CheckPublishOutputs" BeforeTargets="Build">
+    <Warning Condition="!Exists('$(SourceDir)\app\VisionCore.WPF.exe')"
+             Text="WPF publish output not found at $(SourceDir)\app\. Run 'dotnet publish' first."/>
+    <Warning Condition="!Exists('$(SourceDir)\service\VisionCore.Service.exe')"
+             Text="Service publish output not found at $(SourceDir)\service\. Run 'dotnet publish' first."/>
+  </Target>
+
+</Project>

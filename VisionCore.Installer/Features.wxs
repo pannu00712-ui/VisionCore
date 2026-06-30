@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  VisionCore.Installer — Features.wxs
+  ======================================
+  Declares what gets installed and how the component groups from
+  Directories.wxs are assembled into selectable features.
+
+  Feature tree
+  ------------
+  VisionCore (required, always installed)
+  ├── WPF tray application     (required)
+  ├── Windows Service          (optional, default ON)
+  └── Shortcuts                (optional, default ON)
+
+  Silent / admin install
+  ----------------------
+  Disable the service feature entirely:
+    msiexec /i VisionCore-Setup.msi INSTALL_SERVICE=0 /quiet
+
+  Headless (service only, no GUI):
+    msiexec /i VisionCore-Setup.msi ADDLOCAL=ServiceFeature /quiet
+
+  Standard full install:
+    msiexec /i VisionCore-Setup.msi /quiet
+-->
+
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+
+  <Fragment>
+    <Feature
+      Id="ProductFeature"
+      Title="VisionCore"
+      Description="The core VisionCore platform."
+      Level="1"
+      ConfigurableDirectory="INSTALLDIR"
+      Display="expand"
+      InstallDefault="local"
+      AllowAbsent="no">
+
+      <!-- ── WPF tray application ────────────────────────────────────────── -->
+      <Feature
+        Id="AppFeature"
+        Title="VisionCore Desktop App"
+        Description="The WPF tray application — dashboard, camera editor, live logs, and settings."
+        Level="1"
+        Display="expand"
+        InstallDefault="local"
+        AllowAbsent="no">
+
+        <ComponentGroupRef Id="AppFiles" />
+        <ComponentGroupRef Id="RegistryEntries" />
+
+      </Feature>
+
+      <!-- ── Windows Service ────────────────────────────────────────────── -->
+      <!--
+        Level="1"  → installed by default.
+        Set INSTALL_SERVICE=0 on the command line to deselect:
+          msiexec /i ... INSTALL_SERVICE=0
+        This is surfaced in UI.wxs as a checkbox on the Options dialog.
+      -->
+      <Feature
+        Id="ServiceFeature"
+        Title="Background Windows Service"
+        Description="Runs the RTSP/ONVIF streaming engine as a Windows Service (VisionCoreService) so cameras stream even when no user is logged in."
+        Level="1"
+        Display="expand"
+        InstallDefault="local"
+        AllowAbsent="yes">
+
+        <Condition Level="0">NOT INSTALL_SERVICE</Condition>
+
+        <ComponentGroupRef Id="ServiceFiles" />
+        <ComponentGroupRef Id="DataDir" />
+
+      </Feature>
+
+      <!-- ── Shortcuts ──────────────────────────────────────────────────── -->
+      <Feature
+        Id="ShortcutsFeature"
+        Title="Shortcuts"
+        Description="Create a desktop shortcut and Start Menu folder for VisionCore."
+        Level="1"
+        Display="expand"
+        InstallDefault="local"
+        AllowAbsent="yes">
+
+        <Condition Level="0">NOT CREATE_DESKTOP_SHORTCUT AND NOT CREATE_STARTMENU_SHORTCUT</Condition>
+
+      </Feature>
+
+    </Feature>
+  </Fragment>
+
+</Wix>

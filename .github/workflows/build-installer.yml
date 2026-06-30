@@ -1,0 +1,274 @@
+name: Build VisionCore Installers
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g. 1.0.9)'
+        required: true
+        default: '1.0.9'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build x64 + x86 installers
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "push") {
+            $ver = "${{ github.ref_name }}" -replace '^v', ''
+          } else {
+            $ver = "${{ github.event.inputs.version }}"
+          }
+          echo "VERSION=$ver" >> $env:GITHUB_ENV
+          echo "Resolved version: $ver"
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install WiX
+        run: |
+          dotnet tool install --global wix --version 4.0.6
+          wix extension add WixToolset.UI.wixext       --global
+          wix extension add WixToolset.Util.wixext     --global
+          wix extension add WixToolset.Firewall.wixext --global
+          wix extension add WixToolset.Bal.wixext      --global
+
+      - name: Restore NuGet packages
+        run: dotnet restore VisionCore.sln
+
+      - name: Publish WPF (x64)
+        run: >
+          dotnet publish VisionCore.WPF/VisionCore.WPF.csproj
+          -c Release -r win-x64 --self-contained false
+          -o publish/x64/app
+          /p:DebugType=none /p:DebugSymbols=false /p:PublishSingleFile=false
+          /p:Version=${{ env.VERSION }}
+
+      - name: Publish Service (x64)
+        run: >
+          dotnet publish VisionCore.Service/VisionCore.Service.csproj
+          -c Release -r win-x64 --self-contained false
+          -o publish/x64/service
+          /p:DebugType=none /p:DebugSymbols=false /p:PublishSingleFile=false
+          /p:Version=${{ env.VERSION }}
+
+      - name: Publish WPF (x86)
+        run: >
+          dotnet publish VisionCore.WPF/VisionCore.WPF.csproj
+          -c Release -r win-x86 --self-contained false
+          -o publish/x86/app
+          /p:DebugType=none /p:DebugSymbols=false /p:PublishSingleFile=false
+          /p:Version=${{ env.VERSION }}
+
+      - name: Publish Service (x86)
+        run: >
+          dotnet publish VisionCore.Service/VisionCore.Service.csproj
+          -c Release -r win-x86 --self-contained false
+          -o publish/x86/service
+          /p:DebugType=none /p:DebugSymbols=false /p:PublishSingleFile=false
+          /p:Version=${{ env.VERSION }}
+
+      # Generate Directories.wxs dynamically with ALL files from publish output
+      - name: Generate Directories.wxs (x64)
+        shell: pwsh
+        run: |
+          $src = "${{ github.workspace }}\publish\x64"
+          $appFiles = Get-ChildItem -Path "$src\app" -File -Recurse
+          $svcFiles = Get-ChildItem -Path "$src\service" -File -Recurse
+
+          $xml  = '<?xml version="1.0" encoding="utf-8"?>'
+          $xml += '<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">'
+
+          # Directory tree
+          $xml += '<Fragment><StandardDirectory Id="ProgramFiles64Folder"><Directory Id="INSTALLDIR" Name="VisionCore">'
+          $xml += '<Directory Id="INSTALLDIR_APP" Name="app" />'
+          $xml += '<Directory Id="INSTALLDIR_SERVICE" Name="service"><Directory Id="INSTALLDIR_MEDIAMTX" Name="mediamtx" /><Directory Id="INSTALLDIR_FFMPEG" Name="ffmpeg" /></Directory>'
+          $xml += '<Directory Id="INSTALLDIR_DATA" Name="data" /></Directory></StandardDirectory>'
+          $xml += '<StandardDirectory Id="DesktopFolder" />'
+          $xml += '<StandardDirectory Id="ProgramMenuFolder"><Directory Id="STARTMENU_VISIONCORE" Name="VisionCore" /></StandardDirectory>'
+          $xml += '</Fragment>'
+
+          # App files
+          $xml += '<Fragment><ComponentGroup Id="AppFiles" Directory="INSTALLDIR_APP">'
+          $i = 1
+          foreach ($f in $appFiles) {
+            $rel  = $f.FullName.Substring("$src\app\".Length)
+            $safeId = "AF$i"
+            $guid = [guid]::NewGuid().ToString().ToUpper()
+            $xml += "<Component Id=`"$safeId`" Guid=`"$guid`"><File Id=`"${safeId}F`" Source=`"`$(var.SourceDir)\app\$rel`" KeyPath=`"yes`" /></Component>"
+            $i++
+          }
+          # Desktop shortcut
+          $xml += '<Component Id="DesktopShortcut" Guid="D6F4A5B7-C8E9-0123-DEF0-123456789013">'
+          $xml += '<Shortcut Id="DesktopSC" Directory="DesktopFolder" Name="VisionCore" Target="[INSTALLDIR_APP]VisionCore.WPF.exe" WorkingDirectory="INSTALLDIR_APP" Icon="VisionCoreIcon" Advertise="no" />'
+          $xml += '<RemoveFolder Id="RmDesk" Directory="DesktopFolder" On="uninstall" />'
+          $xml += '<RegistryValue Root="HKCU" Key="SOFTWARE\VisionCore\Shortcuts" Name="Desktop" Type="integer" Value="1" KeyPath="yes" /></Component>'
+          # Start Menu shortcut
+          $xml += '<Component Id="StartMenuShortcuts" Guid="E7A5B6C8-D9F0-1234-EF01-234567890124">'
+          $xml += '<Shortcut Id="StartMenuSC" Directory="STARTMENU_VISIONCORE" Name="VisionCore" Target="[INSTALLDIR_APP]VisionCore.WPF.exe" WorkingDirectory="INSTALLDIR_APP" Icon="VisionCoreIcon" Advertise="no" />'
+          $xml += '<RemoveFolder Id="RmStartMenu" Directory="STARTMENU_VISIONCORE" On="uninstall" />'
+          $xml += '<RegistryValue Root="HKCU" Key="SOFTWARE\VisionCore\Shortcuts" Name="StartMenu" Type="integer" Value="1" KeyPath="yes" /></Component>'
+          $xml += '</ComponentGroup></Fragment>'
+
+          # Service files
+          $xml += '<Fragment><ComponentGroup Id="ServiceFiles" Directory="INSTALLDIR_SERVICE">'
+          foreach ($f in $svcFiles) {
+            $rel  = $f.FullName.Substring("$src\service\".Length)
+            $safeId = "SF$i"
+            $guid = [guid]::NewGuid().ToString().ToUpper()
+            $xml += "<Component Id=`"$safeId`" Guid=`"$guid`"><File Id=`"${safeId}F`" Source=`"`$(var.SourceDir)\service\$rel`" KeyPath=`"yes`" /></Component>"
+            $i++
+          }
+          $xml += '<Component Id="DirMediaMtx" Guid="B0D8E9F1-A2C3-4567-1234-567890123457"><CreateFolder Directory="INSTALLDIR_MEDIAMTX" /><RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="MediaMtxDir" Type="string" Value="[INSTALLDIR_MEDIAMTX]" KeyPath="yes" /></Component>'
+          $xml += '<Component Id="DirFfmpeg" Guid="C1E9F0A2-B3D4-5678-2345-678901234568"><CreateFolder Directory="INSTALLDIR_FFMPEG" /><RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="FfmpegDir" Type="string" Value="[INSTALLDIR_FFMPEG]" KeyPath="yes" /></Component>'
+          $xml += '</ComponentGroup></Fragment>'
+
+          # Data dir
+          $xml += '<Fragment><ComponentGroup Id="DataDir" Directory="INSTALLDIR_DATA">'
+          $xml += '<Component Id="DirData" Guid="D2F0A1B3-C4E5-6789-3456-789012345679"><CreateFolder Directory="INSTALLDIR_DATA" /><RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="DataDir" Type="string" Value="[INSTALLDIR_DATA]" KeyPath="yes" /></Component>'
+          $xml += '</ComponentGroup></Fragment></Wix>'
+
+          $xml | Out-File "VisionCore.Installer\Directories.wxs" -Encoding UTF8
+          Write-Host "Generated x64 with $($appFiles.Count) app files, $($svcFiles.Count) service files"
+
+      - name: Build x64 installer
+        run: >
+          dotnet build VisionCore.Installer/VisionCore.Installer.csproj
+          -c Release
+          /p:SourceDir="${{ github.workspace }}\publish\x64"
+          /p:OutputName=VisionCore-${{ env.VERSION }}-Setup-x64
+          /p:ProductVersion=${{ env.VERSION }}
+          /p:InstallerPlatform=x64
+          /p:IntermediateOutputPath=obj\x64\
+          /p:OutputPath=bin\Release\x64\
+
+      - name: Build x64 bundle
+        run: >
+          dotnet build VisionCore.Installer/VisionCore.Bundle.csproj
+          -c Release
+          /p:MsiPath="${{ github.workspace }}\VisionCore.Installer\bin\Release\x64\VisionCore-${{ env.VERSION }}-Setup-x64.msi"
+          /p:OutputName=VisionCore-${{ env.VERSION }}-Setup-x64
+          /p:ProductVersion=${{ env.VERSION }}
+          /p:InstallerPlatform=x64
+          /p:IntermediateOutputPath=obj\x64-bundle\
+          /p:OutputPath=bin\Release\x64\
+
+      # Regenerate Directories.wxs for x86
+      - name: Generate Directories.wxs (x86)
+        shell: pwsh
+        run: |
+          $src = "${{ github.workspace }}\publish\x86"
+          $appFiles = Get-ChildItem -Path "$src\app" -File -Recurse
+          $svcFiles = Get-ChildItem -Path "$src\service" -File -Recurse
+
+          $xml  = '<?xml version="1.0" encoding="utf-8"?>'
+          $xml += '<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">'
+
+          $xml += '<Fragment><StandardDirectory Id="ProgramFilesFolder"><Directory Id="INSTALLDIR" Name="VisionCore">'
+          $xml += '<Directory Id="INSTALLDIR_APP" Name="app" />'
+          $xml += '<Directory Id="INSTALLDIR_SERVICE" Name="service"><Directory Id="INSTALLDIR_MEDIAMTX" Name="mediamtx" /><Directory Id="INSTALLDIR_FFMPEG" Name="ffmpeg" /></Directory>'
+          $xml += '<Directory Id="INSTALLDIR_DATA" Name="data" /></Directory></StandardDirectory>'
+          $xml += '<StandardDirectory Id="DesktopFolder" />'
+          $xml += '<StandardDirectory Id="ProgramMenuFolder"><Directory Id="STARTMENU_VISIONCORE" Name="VisionCore" /></StandardDirectory>'
+          $xml += '</Fragment>'
+
+          $xml += '<Fragment><ComponentGroup Id="AppFiles" Directory="INSTALLDIR_APP">'
+          $i = 1
+          foreach ($f in $appFiles) {
+            $rel  = $f.FullName.Substring("$src\app\".Length)
+            $safeId = "AF$i"
+            $guid = [guid]::NewGuid().ToString().ToUpper()
+            $xml += "<Component Id=`"$safeId`" Guid=`"$guid`"><File Id=`"${safeId}F`" Source=`"`$(var.SourceDir)\app\$rel`" KeyPath=`"yes`" /></Component>"
+            $i++
+          }
+          $xml += '<Component Id="DesktopShortcut" Guid="D6F4A5B7-C8E9-0123-DEF0-123456789013">'
+          $xml += '<Shortcut Id="DesktopSC" Directory="DesktopFolder" Name="VisionCore" Target="[INSTALLDIR_APP]VisionCore.WPF.exe" WorkingDirectory="INSTALLDIR_APP" Icon="VisionCoreIcon" Advertise="no" />'
+          $xml += '<RemoveFolder Id="RmDesk" Directory="DesktopFolder" On="uninstall" />'
+          $xml += '<RegistryValue Root="HKCU" Key="SOFTWARE\VisionCore\Shortcuts" Name="Desktop" Type="integer" Value="1" KeyPath="yes" /></Component>'
+          $xml += '<Component Id="StartMenuShortcuts" Guid="E7A5B6C8-D9F0-1234-EF01-234567890124">'
+          $xml += '<Shortcut Id="StartMenuSC" Directory="STARTMENU_VISIONCORE" Name="VisionCore" Target="[INSTALLDIR_APP]VisionCore.WPF.exe" WorkingDirectory="INSTALLDIR_APP" Icon="VisionCoreIcon" Advertise="no" />'
+          $xml += '<RemoveFolder Id="RmStartMenu" Directory="STARTMENU_VISIONCORE" On="uninstall" />'
+          $xml += '<RegistryValue Root="HKCU" Key="SOFTWARE\VisionCore\Shortcuts" Name="StartMenu" Type="integer" Value="1" KeyPath="yes" /></Component>'
+          $xml += '</ComponentGroup></Fragment>'
+
+          $xml += '<Fragment><ComponentGroup Id="ServiceFiles" Directory="INSTALLDIR_SERVICE">'
+          foreach ($f in $svcFiles) {
+            $rel  = $f.FullName.Substring("$src\service\".Length)
+            $safeId = "SF$i"
+            $guid = [guid]::NewGuid().ToString().ToUpper()
+            $xml += "<Component Id=`"$safeId`" Guid=`"$guid`"><File Id=`"${safeId}F`" Source=`"`$(var.SourceDir)\service\$rel`" KeyPath=`"yes`" /></Component>"
+            $i++
+          }
+          $xml += '<Component Id="DirMediaMtx" Guid="B0D8E9F1-A2C3-4567-1234-567890123457"><CreateFolder Directory="INSTALLDIR_MEDIAMTX" /><RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="MediaMtxDir" Type="string" Value="[INSTALLDIR_MEDIAMTX]" KeyPath="yes" /></Component>'
+          $xml += '<Component Id="DirFfmpeg" Guid="C1E9F0A2-B3D4-5678-2345-678901234568"><CreateFolder Directory="INSTALLDIR_FFMPEG" /><RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="FfmpegDir" Type="string" Value="[INSTALLDIR_FFMPEG]" KeyPath="yes" /></Component>'
+          $xml += '</ComponentGroup></Fragment>'
+
+          $xml += '<Fragment><ComponentGroup Id="DataDir" Directory="INSTALLDIR_DATA">'
+          $xml += '<Component Id="DirData" Guid="D2F0A1B3-C4E5-6789-3456-789012345679"><CreateFolder Directory="INSTALLDIR_DATA" /><RegistryValue Root="HKLM" Key="SOFTWARE\VisionCore" Name="DataDir" Type="string" Value="[INSTALLDIR_DATA]" KeyPath="yes" /></Component>'
+          $xml += '</ComponentGroup></Fragment></Wix>'
+
+          $xml | Out-File "VisionCore.Installer\Directories.wxs" -Encoding UTF8
+          Write-Host "Generated x86 with $($appFiles.Count) app files, $($svcFiles.Count) service files"
+
+      - name: Build x86 installer
+        run: >
+          dotnet build VisionCore.Installer/VisionCore.Installer.csproj
+          -c Release
+          /p:SourceDir="${{ github.workspace }}\publish\x86"
+          /p:OutputName=VisionCore-${{ env.VERSION }}-Setup-x86
+          /p:ProductVersion=${{ env.VERSION }}
+          /p:InstallerPlatform=x86
+          /p:IntermediateOutputPath=obj\x86\
+          /p:OutputPath=bin\Release\x86\
+
+      - name: Build x86 bundle
+        run: >
+          dotnet build VisionCore.Installer/VisionCore.Bundle.csproj
+          -c Release
+          /p:MsiPath="${{ github.workspace }}\VisionCore.Installer\bin\Release\x86\VisionCore-${{ env.VERSION }}-Setup-x86.msi"
+          /p:OutputName=VisionCore-${{ env.VERSION }}-Setup-x86
+          /p:ProductVersion=${{ env.VERSION }}
+          /p:InstallerPlatform=x86
+          /p:IntermediateOutputPath=obj\x86-bundle\
+          /p:OutputPath=bin\Release\x86\
+
+      - name: Collect installer files
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+          Get-ChildItem -Path "VisionCore.Installer\bin\Release" -Recurse -Include *.exe,*.msi |
+            Copy-Item -Destination artifacts -Force
+          Get-ChildItem artifacts | Format-Table Name, Length
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: VisionCore-${{ env.VERSION }}-Installers
+          path: artifacts/*
+          retention-days: 30
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: VisionCore v${{ env.VERSION }}
+          tag_name: ${{ github.ref_name }}
+          files: artifacts/*
+          generate_release_notes: true
+          draft: false
+          prerelease: false
