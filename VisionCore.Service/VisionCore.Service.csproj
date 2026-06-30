@@ -45,8 +45,7 @@
   <ItemGroup>
     <Content Include="appsettings.json"     CopyToOutputDirectory="PreserveNewest"/>
     <Content Include="appsettings.*.json"
-             CopyToOutputDirectory="PreserveNewest"
-             Condition="Exists('%(FullPath)')"/>
+             CopyToOutputDirectory="PreserveNewest"/>
   </ItemGroup>
 
 </Project>
