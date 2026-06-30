@@ -6,14 +6,14 @@
   Directories.wxs are assembled into selectable features.
 
   Feature tree
-  ------------
+  ────────────
   VisionCore (required, always installed)
   ├── WPF tray application     (required)
   ├── Windows Service          (optional, default ON)
   └── Shortcuts                (optional, default ON)
 
   Silent / admin install
-  ----------------------
+  ──────────────────────
   Disable the service feature entirely:
     msiexec /i VisionCore-Setup.msi INSTALL_SERVICE=0 /quiet
 

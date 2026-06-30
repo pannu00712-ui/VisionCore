@@ -7,11 +7,11 @@
   install choices.
 
   Dialog flow
-  -----------
+  ───────────
   WelcomeDlg → LicenseAgreementDlg → InstallDirDlg → VcOptionsDlg → VerifyReadyDlg → [install] → ExitDlg
 
   Custom dialog: VcOptionsDlg
-  ---------------------------
+  ───────────────────────────
   Checkboxes exposed to the user:
     ☑ Install as Windows Service        (INSTALL_SERVICE)
     ☑ Start service automatically       (AUTOSTART_SERVICE)
