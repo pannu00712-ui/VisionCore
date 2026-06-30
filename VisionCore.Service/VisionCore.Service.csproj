@@ -42,10 +42,18 @@
   </ItemGroup>
 
   <!-- ── Embed appsettings ─────────────────────────────────────────────────── -->
+  <!--
+    NOTE: appsettings.json is already picked up automatically by the .NET SDK's
+    default Content items (EnableDefaultContentItems), so it must NOT be
+    listed again here — doing so causes NETSDK1022 (duplicate Content item).
+    Only environment-specific overrides (appsettings.Production.json, etc.),
+    which are NOT covered by the SDK defaults unless present on disk, are
+    declared explicitly below.
+  -->
   <ItemGroup>
-    <Content Include="appsettings.json"     CopyToOutputDirectory="PreserveNewest"/>
     <Content Include="appsettings.*.json"
-             CopyToOutputDirectory="PreserveNewest"/>
+             CopyToOutputDirectory="PreserveNewest"
+             Exclude="appsettings.json"/>
   </ItemGroup>
 
 </Project>

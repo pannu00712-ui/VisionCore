@@ -53,10 +53,12 @@
   </ItemGroup>
 
   <!-- ── appsettings (optional WPF overrides) ──────────────────────────── -->
-  <ItemGroup>
-    <Content Include="appsettings.json"
-             CopyToOutputDirectory="PreserveNewest"
-             Condition="Exists('appsettings.json')"/>
-  </ItemGroup>
+  <!--
+    NOTE: appsettings.json is already picked up automatically by the .NET
+    SDK's default Content items, so it is NOT re-declared here — doing so
+    causes NETSDK1022 (duplicate Content item). Nothing else needed unless
+    an environment-specific override file (e.g. appsettings.Production.json)
+    is added later.
+  -->
 
 </Project>
