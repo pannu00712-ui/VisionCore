@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Open.NAT;
+using Open.Nat;
 using VisionCore.Core.Models;
 
 namespace VisionCore.Core.Services
